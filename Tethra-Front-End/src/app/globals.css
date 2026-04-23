@@ -1,0 +1,1099 @@
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700,900&display=swap');
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Hide scrollbar */
+html, body, * {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+:root {
+  --font-trading-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-trading-mono: var(--font-ibm-plex-mono), Consolas, Monaco, 'Courier New', monospace;
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+@theme inline {
+  /* ===== Base Colors ===== */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* ===== Trading Platform Backgrounds ===== */
+  --color-trading-bg: #0b1017; /* Main trading background */
+  --color-trading-panel: #16191e; /* Panel backgrounds (headers, dropdowns) */
+  --color-trading-surface: #1e2329; /* Surface elements (cards, inactive tabs) */
+  --color-trading-elevated: #2b3139; /* Elevated surfaces (hover states) */
+  --color-trading-dark: #0a0a0a; /* Darkest background */
+
+  /* ===== Trading Actions (Long/Short/Swap) ===== */
+  --color-long: #16c784; /* Long/Buy - Vibrant Green (CoinGecko style) */
+  --color-long-hover: #12a66d; /* Long hover state */
+  --color-long-active: #0e8456; /* Long active/pressed */
+  --color-long-light: #26d99a; /* Long light variant */
+
+  --color-short: #ea3943; /* Short/Sell - Vibrant Red (CoinGecko style) */
+  --color-short-hover: #d32f2f; /* Short hover state */
+  --color-short-active: #b71c1c; /* Short active/pressed */
+  --color-short-light: #ff5252; /* Short light variant */
+
+  --color-swap: #2563eb; /* Swap - Blue */
+  --color-swap-hover: #1d4ed8; /* Swap hover state */
+  --color-swap-active: #1e40af; /* Swap active/pressed */
+  --color-swap-light: #3b82f6; /* Swap light variant */
+
+  /* ===== Status Colors ===== */
+  --color-success: #10b981; /* Success green */
+  --color-success-light: #34d399; /* Success light */
+  --color-success-dark: #059669; /* Success dark */
+
+  --color-warning: #f59e0b; /* Warning orange */
+  --color-warning-light: #fbbf24; /* Warning light */
+  --color-warning-dark: #d97706; /* Warning dark */
+
+  --color-error: #ef4444; /* Error red */
+  --color-error-light: #f87171; /* Error light */
+  --color-error-dark: #dc2626; /* Error dark */
+
+  --color-info: #3b82f6; /* Info blue */
+  --color-info-light: #60a5fa; /* Info light */
+  --color-info-dark: #2563eb; /* Info dark */
+
+  /* ===== Text Colors ===== */
+  --color-text-primary: #ffffff; /* Primary text (white) */
+  --color-text-secondary: #9ca3af; /* Secondary text (gray-400) */
+  --color-text-muted: #6b7280; /* Muted text (gray-500) */
+  --color-text-disabled: #4b5563; /* Disabled text (gray-600) */
+  --color-text-inverse: #0a0a0a; /* Inverse text (for light backgrounds) */
+
+  /* ===== Border Colors ===== */
+  --color-border-default: #374151; /* Default border (gray-700) */
+  --color-border-light: #4b5563; /* Light border (gray-600) */
+  --color-border-muted: #1f2937; /* Muted border (gray-800) */
+  --color-border-focus: #3b82f6; /* Focus border (blue) */
+  --color-border-error: #ef4444; /* Error border (red) */
+
+  /* ===== Button Colors ===== */
+  --color-button-primary: #3b82f6; /* Primary button (blue) */
+  --color-button-primary-hover: #2563eb; /* Primary hover */
+  --color-button-secondary: #6b7280; /* Secondary button (gray) */
+  --color-button-secondary-hover: #4b5563; /* Secondary hover */
+  --color-button-ghost: transparent; /* Ghost button */
+  --color-button-ghost-hover: #1f2937; /* Ghost hover */
+
+  /* ===== Chart Colors ===== */
+  --color-chart-up: #26a69a; /* Price up (green) */
+  --color-chart-down: #ef5350; /* Price down (red) */
+  --color-chart-grid: #334155; /* Chart grid lines */
+  --color-chart-axis: #64748b; /* Chart axis */
+  --color-chart-crosshair: #94a3b8; /* Chart crosshair */
+
+  /* ===== Overlay & Modal Colors ===== */
+  --color-overlay: rgba(0, 0, 0, 0.5); /* Overlay background */
+  --color-overlay-dark: rgba(0, 0, 0, 0.7); /* Dark overlay */
+  --color-modal-bg: #16191e; /* Modal background */
+  --color-modal-border: #374151; /* Modal border */
+
+  /* ===== Input Colors ===== */
+  --color-input-bg: #1e2329; /* Input background */
+  --color-input-border: #374151; /* Input border */
+  --color-input-focus: #3b82f6; /* Input focus border */
+  --color-input-disabled: #1f2937; /* Input disabled */
+  --color-input-placeholder: #6b7280; /* Placeholder text */
+
+  /* ===== Scrollbar Colors ===== */
+  --color-scrollbar-track: #0b1017; /* Scrollbar track */
+  --color-scrollbar-thumb: #1f2937; /* Scrollbar thumb */
+  --color-scrollbar-thumb-hover: #374151; /* Scrollbar thumb hover */
+
+  /* ===== Special Effects ===== */
+  --color-glow-green: rgba(38, 166, 154, 0.3); /* Green glow */
+  --color-glow-red: rgba(239, 83, 80, 0.3); /* Red glow */
+  --color-glow-blue: rgba(59, 130, 246, 0.3); /* Blue glow */
+
+  /* ===== Opacity Variants ===== */
+  --opacity-disabled: 0.5;
+  --opacity-hover: 0.9;
+  --opacity-pressed: 0.8;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+html {
+  /* Base font size - will scale with browser zoom */
+  font-size: 16px;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-trading-sans);
+  /* Use relative font sizes for better zoom scaling */
+  font-size: 1rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar Styling - Dark Theme */
+.custom-scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: #374151 #1a2332;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar-track {
+  background-color: #1a2332;
+  border-radius: 3px;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar-thumb {
+  background-color: #374151;
+  border-radius: 3px;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background-color: #4b5563;
+}
+
+/* Custom Scrollbar Styling - Slate Theme */
+.custom-scrollbar-slate {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(51 65 85) #171b26;
+}
+
+.custom-scrollbar-slate::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar-slate::-webkit-scrollbar-track {
+  background-color: #171b26;
+  border-radius: 3px;
+}
+
+.custom-scrollbar-slate::-webkit-scrollbar-thumb {
+  background-color: rgb(51 65 85);
+  border-radius: 3px;
+}
+
+.custom-scrollbar-slate::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(71 85 105);
+}
+
+/* globals.css atau TradingChart.css */
+.trading-container {
+  padding: 20px;
+  background: #131722;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.left-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.interval-selector {
+  display: flex;
+  gap: 10px;
+}
+
+.interval-button {
+  padding: 8px 16px;
+  background: #2a2e39;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.interval-button:hover {
+  background: #363a45;
+}
+
+.interval-button.active {
+  background: #2962ff;
+}
+
+.live-button {
+  padding: 8px 16px;
+  background: #2a2e39;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.live-button.active {
+  background: #26a69a;
+}
+
+.live-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #666;
+}
+
+.live-button.active .live-indicator {
+  background: #fff;
+}
+
+.live-indicator.blinking {
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.wallet-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+}
+
+.wallet-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.wallet-button:hover {
+  opacity: 0.9;
+}
+
+.wallet-button.connect {
+  background: #2962ff;
+  color: white;
+}
+
+.wallet-button.disconnect {
+  background: #ef5350;
+  color: white;
+}
+
+.chart-container {
+  border-radius: 8px;
+  overflow: hidden;
+}
+.trading-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #131722;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #334158;
+}
+
+.left-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.interval-selector {
+  display: flex;
+}
+
+.interval-button {
+  padding: 4px 12px;
+  background-color: transparent;
+  color: #d1d5db;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.interval-button.active {
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 4px;
+}
+
+.live-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #4b5563;
+  color: #e5e7eb;
+  border: 1px solid #6b7280;
+}
+
+.live-button.active {
+  background-color: #ef5350;
+  color: white;
+  border-color: #ef5350;
+}
+
+.live-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #9ca3af;
+}
+
+.live-indicator.blinking {
+  background-color: #f87171;
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.wallet-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.wallet-button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.wallet-button.connect {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+.wallet-button.disconnect {
+  background-color: #4b5563;
+  border-color: #6b7280;
+}
+
+.chart-container {
+  flex-grow: 1;
+  width: 100%;
+}
+
+/* Styling untuk Order Panel */
+.order-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #1e222d;
+  color: #d1d5db;
+}
+
+.order-panel-tabs {
+  display: flex;
+  border-bottom: 1px solid #334158;
+}
+
+.tab-button {
+  flex-grow: 1;
+  padding: 12px 8px;
+  background-color: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-button.active {
+  color: white;
+  border-bottom-color: #3b82f6;
+}
+
+.order-panel-content {
+  padding: 16px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+/* Styling untuk Form Order */
+.order-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.input-field {
+  background-color: #334158;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  padding: 8px;
+  color: white;
+  width: 100%;
+}
+
+.total-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.button-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.buy-button,
+.sell-button {
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.buy-button {
+  background-color: #26a69a;
+}
+
+.sell-button {
+  background-color: #ef5350;
+}
+
+/* Styling untuk Order Book */
+.order-book {
+  font-size: 12px;
+}
+
+.order-book-header,
+.order-book-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  text-align: right;
+  padding: 4px 0;
+}
+
+.order-book-header {
+  color: #9ca3af;
+  font-weight: bold;
+}
+
+.price-green {
+  color: #26a69a;
+}
+
+.price-red {
+  color: #ef5350;
+}
+
+.current-price {
+  padding: 8px 0;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  border-top: 1px solid #334158;
+  border-bottom: 1px solid #334158;
+  margin: 4px 0;
+} /* Styling untuk Order Panel */
+.order-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #131722; /* Warna disamakan dengan chart */
+  color: #d1d5db;
+}
+
+.order-panel-tabs {
+  display: flex;
+  padding: 8px;
+  gap: 8px;
+}
+
+.tab-button {
+  flex-grow: 1;
+  padding: 10px 8px;
+  background-color: #2a2d3b;
+  border: 1px solid #334158;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 6px;
+  transition: all 0.2s ease-in-out;
+}
+
+.tab-button.active {
+  color: white;
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.order-panel-content {
+  padding: 0 16px 16px 16px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+/* Styling untuk Form Trade Baru */
+.trade-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.buy-sell-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background-color: #2a2d3b;
+  border-radius: 8px;
+  padding: 4px;
+  border: 1px solid #334158;
+}
+
+.toggle-button {
+  padding: 8px;
+  border: none;
+  background-color: transparent;
+  color: #9ca3af;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.toggle-button.buy.active {
+  background-color: #26a69a;
+  color: white;
+}
+
+.toggle-button.sell.active {
+  background-color: #ef5350;
+  color: white;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.amount-input-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: #2a2d3b;
+  border: 1px solid #334158;
+  border-radius: 6px;
+}
+
+.amount-input-wrapper .input-field {
+  background-color: transparent;
+  border: none;
+  flex-grow: 1;
+}
+
+.token-selector {
+  padding: 0 12px;
+  font-weight: 600;
+  color: #d1d5db;
+  border-left: 1px solid #334158;
+}
+
+.preset-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.preset-buttons button {
+  background-color: #334158;
+  border: none;
+  color: #d1d5db;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.preset-buttons button:hover {
+  background-color: #4b5563;
+}
+
+.action-button {
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.action-button:hover {
+  opacity: 0.9;
+}
+.action-button.buy {
+  background-color: #26a69a;
+}
+.action-button.sell {
+  background-color: #ef5350;
+}
+
+.trade-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #334158;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  gap: 4px;
+}
+
+.summary-item span:first-child {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.summary-item span:last-child {
+  font-size: 14px;
+  font-weight: 600;
+}
+/* ... (CSS Anda yang sudah ada) ... */
+
+/* Styling untuk Pair Selector */
+.left-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pair-dropdown {
+  background-color: #334158;
+  color: #d1d5db;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.pair-dropdown:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+/* Fixed Chart Positioning - Prevent overlapping and maintain position during zoom */
+.chart-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Ensure trading chart container stays fixed */
+.trading-chart-container {
+  position: relative !important;
+  width: 100% !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.trading-chart-container > div {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Fix for KLineCharts specific elements */
+.klinecharts,
+[class*='klinecharts'] {
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden !important;
+  display: block !important;
+}
+
+/* Ensure canvas scales properly and stays within bounds */
+.klinecharts canvas,
+.trading-chart-container canvas {
+  display: block;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain;
+}
+
+/* Prevent content from breaking layout on zoom */
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Trading Font Classes - Professional trading platform styles */
+.font-trading-sans {
+  font-family: var(--font-trading-sans);
+}
+
+.font-trading-mono {
+  font-family: var(--font-trading-mono);
+  letter-spacing: 0.3px;
+}
+
+/* Trading Chart Specific Styles */
+.trading-chart-price {
+  font-family: var(--font-trading-mono);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.trading-chart-label {
+  font-family: var(--font-trading-sans);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.trading-chart-symbol {
+  font-family: var(--font-trading-sans);
+  font-weight: 700;
+}
+
+/* Number display optimization for trading */
+.trading-number {
+  font-family: var(--font-trading-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3px;
+}
+
+#__next {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Responsive scaling for all panels */
+@media (max-width: 1600px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 1400px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1200px) {
+  html {
+    font-size: 13px;
+  }
+}
+
+/* Toast container - prevent blocking UI */
+.toast-container {
+  pointer-events: none !important;
+}
+
+.toast-container > div {
+  pointer-events: auto !important;
+}
+
+/* Custom Scrollbar for Copy Trade Page */
+.copy-trade-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3441 #151b26;
+}
+
+.copy-trade-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.copy-trade-scrollbar::-webkit-scrollbar-track {
+  background-color: #151b26;
+  border-radius: 4px;
+}
+
+.copy-trade-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #2a3441;
+  border-radius: 4px;
+}
+
+.copy-trade-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #3a4451;
+}
+
+/* Global Scrollbar Styling - Dark Theme sesuai dengan tema aplikasi */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1f2937 #0b1017;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background-color: #0b1017;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #1f2937;
+  border-radius: 4px;
+  border: 1px solid #374151;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #374151;
+}
+
+/* Mobile Responsive Animations */
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Mobile Specific Styles */
+@media (max-width: 768px) {
+  /* Hide desktop elements on mobile */
+  .hide-mobile {
+    display: none !important;
+  }
+
+  /* Full width containers on mobile */
+  .mobile-full-width {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
+  /* Adjust padding for mobile */
+  .mobile-padding {
+    padding: 0.75rem !important;
+  }
+
+  /* Bottom sheet styles */
+  .mobile-bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    max-height: 80vh;
+    overflow-y: auto;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Overlay backdrop */
+  .mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 40;
+  }
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

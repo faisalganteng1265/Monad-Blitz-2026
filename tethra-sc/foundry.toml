@@ -1,0 +1,47 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+script = "script"
+cache_path = "cache"
+
+# Compiler settings
+solc_version = "0.8.31"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+
+# EVM version
+evm_version = "cancun"
+
+# Remappings for imports
+remappings = [
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "forge-std/=lib/forge-std/src/"
+]
+
+# Test settings
+verbosity = 2
+gas_reports = ["*"]
+
+# File system permissions for deployment scripts
+fs_permissions = [{ access = "read-write", path = "./deployments" }]
+
+# RPC endpoints
+[rpc_endpoints]
+base_sepolia = "https://sepolia.base.org"
+base_mainnet = "https://mainnet.base.org"
+
+# See more config options https://github.com/foundry-rs/foundry/tree/master/crates/config
+
+[profile.verify]
+solc_version = "0.8.31"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+evm_version = "cancun"
+
+[etherscan]
+base-sepolia = { key = "${BASESCAN_API_KEY}" }
+base = { key = "${BASESCAN_API_KEY}" }

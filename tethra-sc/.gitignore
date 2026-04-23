@@ -1,0 +1,20 @@
+# Compiler files
+cache/
+out/
+
+# Ignores development broadcast logs
+broadcast/
+
+# Ignores deployment scripts' artifacts
+deployments/*
+/deployments
+
+# Test artifacts
+*.t.sol.d
+test/**/*.t.sol.d
+
+# Docs
+docs/
+
+# Dotenv file
+.env
