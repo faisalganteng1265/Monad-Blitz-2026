@@ -4,7 +4,6 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, IBM_Plex_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { Providers } from './providers';
-import { SidebarProvider } from '@/contexts/SidebarContext';
 import { minikitConfig } from '@/minikit.config';
 
 const inter = Inter({
@@ -98,9 +97,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/tethra-logo.png" />
       </head>
       <body className={inter.className} suppressHydrationWarning>
-        <Providers>
-          <SidebarProvider>{children}</SidebarProvider>
-        </Providers>
+        <Providers>{children}</Providers>
         <Analytics />
       </body>
     </html>

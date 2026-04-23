@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Copy, ExternalLink, LogOut, Wallet, Key, DollarSign, X, ShieldOff } from 'lucide-react';
+import { Copy, ExternalLink, LogOut, Wallet, Key, DollarSign, X } from 'lucide-react';
 import { DialogClose } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -17,8 +17,6 @@ import {
 import { useWalletBalance } from '@/hooks/wallet/useWalletBalance';
 import { useWalletActions } from '@/hooks/wallet/useWalletActions';
 import { useUSDCFaucet } from '@/hooks/wallet/useUSDCFaucet';
-import { useTapToTradeApproval } from '@/features/wallet/hooks/useTapToTradeApproval';
-import { toast } from 'sonner';
 
 export const WalletDialogContent: React.FC = () => {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
@@ -37,23 +35,6 @@ export const WalletDialogContent: React.FC = () => {
       refetchBalance();
     },
   });
-  const { allowance, revoke, isPending: isRevoking } = useTapToTradeApproval();
-
-  const handleRevoke = async () => {
-    const toastId = 'revoke-stabilityfund-approval';
-    toast.loading('Revoking USDC approval...', { id: toastId });
-    try {
-      await revoke();
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('tethra:allowanceUpdated'));
-      }
-      toast.success('USDC approval revoked', { id: toastId });
-    } catch (error: any) {
-      const message = error?.message || 'Failed to revoke approval';
-      toast.error(message, { id: toastId });
-    }
-  };
-
   return (
     <>
       {/* Header Section */}
@@ -169,7 +150,7 @@ export const WalletDialogContent: React.FC = () => {
         </div>
 
         {/* Deposit, Withdraw & Faucet Buttons */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <button className="py-3 px-4 bg-slate-700/50 hover:bg-slate-700 rounded-xl text-slate-100 font-medium transition-colors cursor-pointer">
             Deposit
           </button>
@@ -184,15 +165,6 @@ export const WalletDialogContent: React.FC = () => {
           >
             <DollarSign className="w-4 h-4" />
             {isClaiming ? 'Fauceting...' : 'Faucet'}
-          </button>
-          <button
-            onClick={handleRevoke}
-            disabled={isRevoking || !allowance || allowance === 0n}
-            className="py-3 px-4 bg-red-600 hover:bg-red-700 disabled:bg-red-900/60 disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors cursor-pointer flex items-center justify-center gap-2"
-            title="Revoke USDC approval for Stability Fund"
-          >
-            <ShieldOff className="w-4 h-4" />
-            {isRevoking ? 'Revoking...' : 'Revoke'}
           </button>
         </div>
       </div>
