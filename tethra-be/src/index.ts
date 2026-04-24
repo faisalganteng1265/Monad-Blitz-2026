@@ -5,8 +5,10 @@ import { PriceWatcher } from './services/PriceWatcher';
 import { WinDetector } from './services/WinDetector';
 import { Settler } from './services/Settler';
 import { ExpiryCleanup } from './services/ExpiryCleanup';
+import { createServer } from './server';
 
 const logger = new Logger('Main');
+const PORT = parseInt(process.env.PORT ?? '3001');
 
 async function main(): Promise<void> {
   logger.info('Starting TapX solver...');
@@ -26,6 +28,12 @@ async function main(): Promise<void> {
   settler.start();
   cleanup.start();
 
+  // Start HTTP + WebSocket server
+  const server = createServer({ scanner, priceWatcher });
+  server.listen(PORT, () => {
+    logger.info(`HTTP server listening on http://localhost:${PORT}`);
+  });
+
   logger.info('TapX solver running');
 
   // Graceful shutdown
@@ -34,6 +42,7 @@ async function main(): Promise<void> {
     settler.stop();
     cleanup.stop();
     priceWatcher.shutdown();
+    server.close();
     process.exit(0);
   };
 

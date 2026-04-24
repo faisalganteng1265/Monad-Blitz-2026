@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { keccak256, toBytes } from 'viem';
 
 function requireEnv(name: string): string {
   const val = process.env[name];
@@ -64,9 +65,9 @@ export const TAP_BET_MANAGER_ABI = [
 
 // Symbol name → keccak256 bytes32 mapping (mirrors PriceAdapter.setPriceId logic)
 export const SYMBOL_BYTES32: Record<string, `0x${string}`> = {
-  BTC: '0x' + Buffer.from(require('crypto').createHash('keccak256').update('BTC').digest()).toString('hex') as `0x${string}`,
-  ETH: '0x' + Buffer.from(require('crypto').createHash('keccak256').update('ETH').digest()).toString('hex') as `0x${string}`,
-  MON: '0x' + Buffer.from(require('crypto').createHash('keccak256').update('MON').digest()).toString('hex') as `0x${string}`,
+  BTC: keccak256(toBytes('BTC')),
+  ETH: keccak256(toBytes('ETH')),
+  MON: keccak256(toBytes('MON')),
 };
 
 // Reverse map: bytes32 → symbol name

@@ -5,6 +5,14 @@ import { config } from '../config';
 
 type PriceCallback = (update: PriceUpdate) => void;
 
+interface OraclePrice {
+  symbol: string;
+  price: number;        // human-readable (e.g. 96000.5)
+  confidence?: number;
+  timestamp: number;
+  source: string;
+}
+
 export class PriceWatcher {
   private logger = new Logger('PriceWatcher');
   private ws: WebSocket | null = null;
@@ -12,6 +20,7 @@ export class PriceWatcher {
   private reconnectAttempts = 0;
   private readonly MAX_RECONNECT = 10;
   private readonly HERMES_WS = `${config.pythHermesUrl.replace('https://', 'wss://')}/ws`;
+  private latestPrices: Record<string, OraclePrice> = {};
 
   // priceId (0x-prefixed) → symbol name
   private priceIdToSymbol = new Map<string, string>();
@@ -29,6 +38,10 @@ export class PriceWatcher {
 
   onPriceUpdate(cb: PriceCallback): void {
     this.callbacks.push(cb);
+  }
+
+  getLatestPrices(): Record<string, OraclePrice> {
+    return this.latestPrices;
   }
 
   start(): void {
@@ -84,6 +97,15 @@ export class PriceWatcher {
         : rawPrice * BigInt(10 ** (expo + 8));
 
     if (price8dec <= 0n) return;
+
+    // Store human-readable price for REST/WS access
+    const humanPrice = Number(price8dec) / 1e8;
+    this.latestPrices[symbol] = {
+      symbol,
+      price: humanPrice,
+      timestamp: feed.price.publish_time,
+      source: 'pyth',
+    };
 
     for (const cb of this.callbacks) {
       try {

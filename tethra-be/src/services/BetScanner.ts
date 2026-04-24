@@ -13,16 +13,23 @@ const MONAD_TESTNET = {
 export class BetScanner {
   private logger = new Logger('BetScanner');
   private activeBets = new Map<bigint, ActiveBet>();
+  private syncing = true;
   private client = createPublicClient({ chain: MONAD_TESTNET, transport: http(config.rpcUrl) });
 
   async start(): Promise<void> {
+    this.syncing = true;
     await this._syncActiveBets();
     this._watchEvents();
+    this.syncing = false;
     this.logger.info(`Startup sync complete — ${this.activeBets.size} active bets`);
   }
 
   getActiveBets(): Map<bigint, ActiveBet> {
     return this.activeBets;
+  }
+
+  isSyncing(): boolean {
+    return this.syncing;
   }
 
   private async _syncActiveBets(): Promise<void> {
