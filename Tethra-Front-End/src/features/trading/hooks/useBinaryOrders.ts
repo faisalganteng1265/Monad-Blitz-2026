@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useEmbeddedWallet } from '@/features/wallet/hooks/useEmbeddedWallet';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
@@ -31,10 +31,11 @@ function normalizeBet(bet: any): BinaryOrder {
   };
 }
 
-export function useBinaryOrders() {
+export function useBinaryOrders(onWin?: (bet: BinaryOrder) => void) {
   const [orders, setOrders] = useState<BinaryOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { address } = useEmbeddedWallet();
+  const prevStatusRef = useRef<Map<string, string>>(new Map());
 
   const fetchOrders = useCallback(async () => {
     if (!address) {
@@ -75,6 +76,20 @@ export function useBinaryOrders() {
           seen.add(b.betId);
           merged.push(b);
         }
+      }
+
+      // Detect newly won bets
+      if (onWin) {
+        for (const bet of merged) {
+          const prev = prevStatusRef.current.get(bet.betId);
+          if (bet.status === 'WON' && prev && prev !== 'WON') {
+            onWin(bet);
+          }
+        }
+      }
+      // Update prev status map
+      for (const bet of merged) {
+        prevStatusRef.current.set(bet.betId, bet.status);
       }
 
       setOrders(merged);

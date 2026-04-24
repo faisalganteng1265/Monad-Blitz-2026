@@ -16,6 +16,12 @@ interface Services {
   priceWatcher: PriceWatcher;
 }
 
+let _broadcastWin: ((betId: bigint, trader: string, payout: bigint) => void) | null = null;
+
+export function broadcastWin(betId: bigint, trader: string, payout: bigint): void {
+  _broadcastWin?.(betId, trader, payout);
+}
+
 export function createServer(services: Services): http.Server {
   const { scanner, priceWatcher } = services;
 
@@ -58,6 +64,18 @@ export function createServer(services: Services): http.Server {
       logger.info(`WS client disconnected (total: ${clients.size})`);
     });
   });
+
+  // Register win broadcaster
+  _broadcastWin = (betId: bigint, trader: string, payout: bigint) => {
+    if (clients.size === 0) return;
+    const msg = JSON.stringify({
+      type: 'bet_won',
+      data: { betId: betId.toString(), trader, payout: payout.toString() },
+    });
+    for (const client of clients) {
+      if (client.readyState === WebSocket.OPEN) client.send(msg);
+    }
+  };
 
   // Broadcast every Pyth price tick to all connected WS clients
   priceWatcher.onPriceUpdate((update: PriceUpdate) => {

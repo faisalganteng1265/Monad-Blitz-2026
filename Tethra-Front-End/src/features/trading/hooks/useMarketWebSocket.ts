@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FuturesData, MarketData, Market } from '@/features/trading/types';
 
 interface OraclePrice {
@@ -20,11 +20,18 @@ interface UseMarketWebSocketReturn {
  * Custom hook to manage WebSocket connections for market data
  * Handles both Binance spot prices and Pyth Oracle prices
  */
-export function useMarketWebSocket(markets: Market[]): UseMarketWebSocketReturn {
+export interface BetWonEvent { betId: string; trader: string; payout: string; }
+
+export function useMarketWebSocket(
+  markets: Market[],
+  onBetWon?: (event: BetWonEvent) => void,
+): UseMarketWebSocketReturn {
   const [allPrices, setAllPrices] = useState<Record<string, string>>({});
   const [marketDataMap, setMarketDataMap] = useState<Record<string, MarketData>>({});
   const [futuresDataMap, setFuturesDataMap] = useState<Record<string, FuturesData>>({});
   const [oraclePrices, setOraclePrices] = useState<Record<string, OraclePrice>>({});
+  const onBetWonRef = useRef(onBetWon);
+  onBetWonRef.current = onBetWon;
 
   // Seed oracle prices from REST once (covers new env feeds before WS ticks)
   useEffect(() => {
@@ -209,6 +216,10 @@ export function useMarketWebSocket(markets: Market[]): UseMarketWebSocketReturn 
                 });
                 return next;
               });
+            }
+
+            if (message.type === 'bet_won' && message.data) {
+              onBetWonRef.current?.(message.data);
             }
           } catch (error) {
             console.error('Error parsing Oracle message:', error);

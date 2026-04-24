@@ -2,6 +2,7 @@ import { createPublicClient, http, parseAbiItem } from 'viem';
 import { Logger } from '../utils/Logger';
 import { ActiveBet, Direction } from '../types';
 import { config, TAP_BET_MANAGER_ABI, BYTES32_TO_SYMBOL } from '../config';
+import { broadcastWin } from '../server';
 
 const MONAD_TESTNET = {
   id: 10143,
@@ -116,6 +117,7 @@ export class BetScanner {
           const args = log.args as any;
           this.activeBets.delete(args.betId);
           this.logger.info(`Bet won: id=${args.betId} settler=${args.settler} payout=${args.payout}`);
+          broadcastWin(args.betId, args.user ?? args.settler, args.payout ?? 0n);
         }
       },
       onError: (err) => this.logger.error('BetWon watch error', err),
