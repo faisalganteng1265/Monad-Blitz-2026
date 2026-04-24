@@ -4,9 +4,7 @@ import PriceTicker from '@/components/layout/PriceTicker';
 import { useMarket } from '@/features/trading/contexts/MarketContext';
 import { useDynamicTitle } from '@/hooks/utils/useDynamicTitle';
 import TradingChart from '@/features/trading/components/charts/TradingChart';
-import TradingGrid from '@/features/trading/components/TradingGrid';
 import SessionControls from '@/features/trading/components/SessionControls';
-import { useBetEvents } from '@/features/trading/hooks/useBetEvents';
 
 export default function TradePageContent() {
   const { activeMarket, currentPrice } = useMarket();
@@ -15,26 +13,17 @@ export default function TradePageContent() {
   const pairName = activeMarket?.symbol || 'BTC/USDT';
   useDynamicTitle(priceValue, pairName);
 
-  const currentPriceBigInt = BigInt(Math.round((priceValue ?? 0) * 1e8));
-  const { activeBets } = useBetEvents(currentPriceBigInt);
-
   return (
-    <main className="bg-trading-dark text-text-primary min-h-screen flex flex-col relative">
-      <div className="flex-1 flex flex-col min-h-0">
-        {/* Price chart */}
-        <div className="flex-1 min-h-[40vh]">
+    <main className="bg-trading-dark text-text-primary h-screen flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-row min-h-0">
+        {/* Price chart — kiri */}
+        <div className="flex-1 min-w-0 overflow-hidden">
           <TradingChart />
         </div>
 
-        {/* Session controls + trading grid */}
-        <div className="border-t border-border-muted bg-[#0B1017]">
+        {/* Right panel — lebar tetap, pas satu layar, tanpa scroll */}
+        <div className="w-72 shrink-0 flex flex-col border-l border-border-muted bg-[#0B1017] h-full overflow-hidden">
           <SessionControls />
-          <div className="px-2 py-2 overflow-auto max-h-[45vh]">
-            <TradingGrid
-              currentPrice={priceValue ?? 0}
-              activeBets={activeBets}
-            />
-          </div>
         </div>
       </div>
 

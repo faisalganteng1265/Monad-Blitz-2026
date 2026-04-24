@@ -571,6 +571,14 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
           const centerX = xLeft + boxWidth / 2;
           const centerY = yTop + boxHeight / 2;
 
+          // Cell background color based on multiplier tier (only for unselected/unhovered future cells)
+          if (isSelectableFuture && !isSelected && !isHovered && !activeBet) {
+            const mv = displayMult / 100;
+            const [cr, cg, cb] = mv < 2 ? [249, 115, 22] : mv < 5 ? [250, 204, 21] : [74, 222, 128];
+            ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, ${0.07 * cellAlpha})`;
+            ctx.fillRect(xLeft, yTop, boxWidth, boxHeight);
+          }
+
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
 
