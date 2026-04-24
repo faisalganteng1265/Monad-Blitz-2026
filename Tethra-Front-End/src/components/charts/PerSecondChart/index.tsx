@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { PerSecondChartProps } from './types';
 import { DEFAULT_GRID_X_SECONDS, DEFAULT_GRID_Y_PERCENT } from './constants';
 import { calculateMultiplier } from './utils';
-import { Bet } from '@/features/trading/types';
+import { Bet } from '../../../features/trading/types';
 
 // Hooks
 import { useChartDimensions } from './hooks/useChartDimensions';
@@ -210,7 +210,7 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
     if (bottomMargin > 0) ctx.fillRect(0, chartHeight, canvas.width, bottomMargin);
 
     // Calculate grid square size
-    const targetVerticalGrids = 13;
+    const targetVerticalGrids = 11;
     const gridSizePixels = chartHeight / targetVerticalGrids;
     const pixelsPerDollar = gridSizePixels / GRID_Y_DOLLARS;
     const priceRangeToShow = chartHeight / pixelsPerDollar;
@@ -369,10 +369,17 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
         ctx.stroke();
 
         if (showXAxis) {
-          const date = new Date(timestamp);
-          const timeLabel = `${String(date.getHours()).padStart(2, '0')}:${String(
-            date.getMinutes(),
-          ).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+          const nowMs =
+            interpolatedHistory.length > 0
+              ? interpolatedHistory[interpolatedHistory.length - 1].time
+              : Date.now();
+          const offsetSeconds = Math.round((timestamp - nowMs) / 1000);
+          const timeLabel =
+            offsetSeconds > 0
+              ? `+${offsetSeconds}s`
+              : offsetSeconds < 0
+              ? `${offsetSeconds}s`
+              : '0s';
 
           ctx.fillStyle = '#94a3b8';
           ctx.font = '9px monospace';
@@ -472,6 +479,12 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
         const isSelected = selectedCells.has(cellId);
         const isHovered = isGridInteractive && hoveredCell === cellId && !suppressHoverPreview;
 
+        const currentGridStartDraw =
+          Math.floor(nowSeconds / gridIntervalSeconds) * gridIntervalSeconds;
+        const minSelectableGridStartDraw = currentGridStartDraw + gridIntervalSeconds * 2;
+        const isSelectableFuture =
+          isGridInteractive && gridEntryTime >= minSelectableGridStartDraw;
+
         // Default colors
         let cellColor = '59, 130, 246'; // Blue
         if (tradeMode === 'open-position') {
@@ -481,13 +494,11 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
           const isLong = cellCenterPrice < currentPriceVal;
           cellColor = isLong ? '34, 197, 94' : '239, 68, 68'; // Green : Red
         } else if (activeBet) {
-          // Purple/Gold for active bets? Or just brighter?
           cellColor = '168, 85, 247'; // Purple
         }
 
         if (activeBet) {
-          // Always show active bet fully
-          ctx.fillStyle = `rgba(${cellColor}, 0.5)`; // Stronger fill
+          ctx.fillStyle = `rgba(${cellColor}, 0.5)`;
           ctx.fillRect(xLeft, yTop, boxWidth, boxHeight);
           ctx.strokeStyle = `rgba(${cellColor}, 1)`;
           ctx.lineWidth = 2;
@@ -499,15 +510,15 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
           ctx.lineWidth = 2;
           ctx.strokeRect(xLeft, yTop, boxWidth, boxHeight);
         } else if (isHovered && !isDragging) {
-          ctx.fillStyle = `rgba(${cellColor}, 0.15)`;
+          ctx.fillStyle = 'rgba(168, 85, 247, 0.25)';
           ctx.fillRect(xLeft, yTop, boxWidth, boxHeight);
-          ctx.strokeStyle = `rgba(${cellColor}, 0.5)`;
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = 'rgba(168, 85, 247, 0.8)';
+          ctx.lineWidth = 1.5;
           ctx.strokeRect(xLeft, yTop, boxWidth, boxHeight);
         }
 
         // Shared text drawing logic
-        if ((isSelected || (isHovered && !isDragging)) || activeBet) {
+        if (isSelected || (isHovered && !isDragging) || activeBet || isSelectableFuture) {
           // Calculate values
           const targetPrice = priceLevel + GRID_Y_DOLLARS / 2;
           const targetTime = gridEndTime;
@@ -632,15 +643,15 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
       ctx.lineTo(lastX, chartHeight);
       ctx.closePath();
       const gradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
-      gradient.addColorStop(0, 'rgba(0, 255, 65, 0.25)');
+      gradient.addColorStop(0, 'rgba(168, 85, 247, 0.25)');
       gradient.addColorStop(1, 'rgba(0, 0, 0, 0.05)');
       ctx.fillStyle = gradient;
       ctx.fill();
 
       // Line
-      ctx.strokeStyle = '#00ff41';
+      ctx.strokeStyle = '#a855f7';
       ctx.lineWidth = 3;
-      ctx.shadowColor = '#00ff41';
+      ctx.shadowColor = '#a855f7';
       ctx.shadowBlur = 10;
       ctx.beginPath();
       firstPoint = true;
@@ -669,22 +680,22 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
 
       if (blinkState) {
         if (isFocusMode) {
-          ctx.strokeStyle = 'rgba(0, 255, 65, 0.4)';
+          ctx.strokeStyle = 'rgba(168, 85, 247, 0.4)';
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.arc(latestX, currentPriceY, 12, 0, Math.PI * 2);
           ctx.stroke();
         }
-        ctx.fillStyle = 'rgba(0, 255, 65, 0.3)';
+        ctx.fillStyle = 'rgba(168, 85, 247, 0.3)';
         ctx.beginPath();
         ctx.arc(latestX, currentPriceY, 8, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = 'rgba(0, 255, 65, 0.6)';
+        ctx.fillStyle = 'rgba(168, 85, 247, 0.6)';
         ctx.beginPath();
         ctx.arc(latestX, currentPriceY, 5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = '#00ff41';
-        ctx.shadowColor = '#00ff41';
+        ctx.fillStyle = '#a855f7';
+        ctx.shadowColor = '#a855f7';
         ctx.shadowBlur = 15;
         ctx.beginPath();
         ctx.arc(latestX, currentPriceY, 3, 0, Math.PI * 2);

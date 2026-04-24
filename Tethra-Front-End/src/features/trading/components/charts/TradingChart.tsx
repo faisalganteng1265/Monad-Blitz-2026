@@ -226,7 +226,7 @@ const TradingChart: React.FC = () => {
             tradeMode="one-tap-profit"
             showXAxis={true}
             showYAxis={true}
-            yAxisSide="right"
+            yAxisSide="left"
             onCellClick={handleCellClick}
           />
         )}

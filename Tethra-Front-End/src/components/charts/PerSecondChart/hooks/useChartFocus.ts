@@ -62,7 +62,7 @@ export const useChartFocus = ({
           : { time: Date.now(), price: currentPrice };
 
       // Calculate where the head *would* be without scrolling
-      const gridSizePixels = (dimensions.height - 30) / 13; // Match index.tsx targetVerticalGrids
+      const gridSizePixels = (dimensions.height - 30) / 11; // Match index.tsx targetVerticalGrids
       const pixelsPerSecond = gridSizePixels / gridIntervalSeconds;
 
       const now = Date.now();
