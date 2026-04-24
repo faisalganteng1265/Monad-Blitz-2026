@@ -11,7 +11,7 @@ export const calculateMultiplier = (
   const duration = Math.max(targetTime - entryTime, 10);
 
   // 3. Crypto volatility: ~0.0012% per second
-  const volatilityPerSecond = 0.0012;
+  const volatilityPerSecond = 0.01;
   const expectedMove = volatilityPerSecond * Math.sqrt(duration);
 
   // 4. Difficulty ratio
