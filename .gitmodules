@@ -1,0 +1,3 @@
+[submodule "tethra-sc/lib/pyth-sdk-solidity"]
+	path = tethra-sc/lib/pyth-sdk-solidity
+	url = https://github.com/pyth-network/pyth-sdk-solidity
