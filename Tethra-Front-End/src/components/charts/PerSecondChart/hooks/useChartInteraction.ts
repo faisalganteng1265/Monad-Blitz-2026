@@ -20,6 +20,7 @@ interface UseChartInteractionProps {
     entryPrice: number,
     entryTime: number,
   ) => void;
+  onCellPress?: (x: number, y: number) => void;
   priceHistory: PricePoint[];
   currentPrice: number;
   gridIntervalSeconds?: number;
@@ -38,6 +39,7 @@ export const useChartInteraction = ({
   isInteractionLocked = false,
   resolveCellFromPoint,
   onCellClick,
+  onCellPress,
   priceHistory,
   currentPrice,
   gridIntervalSeconds = DEFAULT_GRID_X_SECONDS,
@@ -130,6 +132,8 @@ export const useChartInteraction = ({
         return;
       }
 
+      if (point && onCellPress) onCellPress(point.x, point.y);
+
         // Cell interaction logic
         const [timestampStr, priceLevelStr] = resolvedCell.split('_');
         const gridStartTime = parseInt(timestampStr);
@@ -175,6 +179,7 @@ export const useChartInteraction = ({
       priceHistory,
       currentPrice,
       onCellClick,
+      onCellPress,
       GRID_X_SECONDS,
       gridYDollars,
       setIsFocusMode,

@@ -16,6 +16,7 @@ import { useChartInteraction } from './hooks/useChartInteraction';
 const PerSecondChart: React.FC<PerSecondChartProps> = ({
   symbol,
   currentPrice,
+  betAmount = '10',
   isBinaryTradingEnabled = false,
   tradeMode = 'one-tap-profit',
   onCellClick,
@@ -36,6 +37,10 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
   const resolveCellFromPointRef = useRef<((point: { x: number; y: number }) => string | null) | null>(
     null,
   );
+  const clickAnimationsRef = useRef<Array<{
+    xLeft: number; yTop: number; w: number; h: number; startMs: number;
+  }>>([]);
+  const cellBoundsMapRef = useRef<Map<string, { xLeft: number; yTop: number; w: number; h: number }>>(new Map());
 
   // State lifted from hooks for shared access
   const [scrollOffset, setScrollOffset] = useState(0);
@@ -124,6 +129,12 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
     isInteractionLocked,
     resolveCellFromPoint: (point) => resolveCellFromPointRef.current?.(point) ?? null,
     onCellClick,
+    onCellPress: (_x, _y) => {
+      const bounds = hoveredCell ? cellBoundsMapRef.current.get(hoveredCell) : null;
+      if (bounds) {
+        clickAnimationsRef.current.push({ ...bounds, startMs: Date.now() });
+      }
+    },
     priceHistory,
     currentPrice,
     gridIntervalSeconds,
@@ -455,6 +466,7 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
 
         const boxWidth = xRight - xLeft;
         const boxHeight = Math.abs(yBottom - yTop);
+        cellBoundsMapRef.current.set(cellId, { xLeft, yTop, w: boxWidth, h: boxHeight });
 
         // Check hover
         if (
@@ -485,6 +497,18 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
         const isSelectableFuture =
           isGridInteractive && gridEntryTime >= minSelectableGridStartDraw;
 
+        // Fade uses continuous time so the effect is smooth as the boundary sweeps through
+        // fadeEnd = continuous selectable boundary; cells fade over 1 grid interval AFTER crossing it
+        const fadeEnd = nowSeconds + gridIntervalSeconds * 2;     // continuous boundary
+        const fadeStart = fadeEnd - gridIntervalSeconds * 0.3;   // fade over 30% of 1 grid = fast
+        const cellAlpha = (isSelected || activeBet)
+          ? 1.0
+          : gridEntryTime >= fadeEnd
+          ? 1.0                                                  // fully selectable
+          : gridEntryTime >= fadeStart
+          ? (gridEntryTime - fadeStart) / gridIntervalSeconds   // fading (0→1 as cell exits)
+          : 0.0;                                                 // fully gone
+
         // Default colors
         let cellColor = '59, 130, 246'; // Blue
         if (tradeMode === 'open-position') {
@@ -498,27 +522,27 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
         }
 
         if (activeBet) {
-          ctx.fillStyle = `rgba(${cellColor}, 0.5)`;
+          ctx.fillStyle = `rgba(${cellColor}, ${0.5 * cellAlpha})`;
           ctx.fillRect(xLeft, yTop, boxWidth, boxHeight);
-          ctx.strokeStyle = `rgba(${cellColor}, 1)`;
+          ctx.strokeStyle = `rgba(${cellColor}, ${cellAlpha})`;
           ctx.lineWidth = 2;
           ctx.strokeRect(xLeft, yTop, boxWidth, boxHeight);
         } else if (isSelected) {
-          ctx.fillStyle = `rgba(${cellColor}, 0.3)`;
+          ctx.fillStyle = `rgba(168, 85, 247, ${0.35 * cellAlpha})`;
           ctx.fillRect(xLeft, yTop, boxWidth, boxHeight);
-          ctx.strokeStyle = `rgba(${cellColor}, 0.8)`;
+          ctx.strokeStyle = `rgba(192, 132, 252, ${cellAlpha})`;
           ctx.lineWidth = 2;
           ctx.strokeRect(xLeft, yTop, boxWidth, boxHeight);
         } else if (isHovered && !isDragging) {
-          ctx.fillStyle = 'rgba(168, 85, 247, 0.25)';
+          ctx.fillStyle = `rgba(168, 85, 247, ${0.25 * cellAlpha})`;
           ctx.fillRect(xLeft, yTop, boxWidth, boxHeight);
-          ctx.strokeStyle = 'rgba(168, 85, 247, 0.8)';
+          ctx.strokeStyle = `rgba(168, 85, 247, ${0.8 * cellAlpha})`;
           ctx.lineWidth = 1.5;
           ctx.strokeRect(xLeft, yTop, boxWidth, boxHeight);
         }
 
-        // Shared text drawing logic
-        if (isSelected || (isHovered && !isDragging) || activeBet || isSelectableFuture) {
+        // Shared text drawing logic — show text for selectable cells, fading cells, or active bets
+        if (isSelected || (isHovered && !isDragging) || activeBet || isSelectableFuture || cellAlpha > 0) {
           // Calculate values
           const targetPrice = priceLevel + GRID_Y_DOLLARS / 2;
           const targetTime = gridEndTime;
@@ -546,7 +570,6 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
 
           const centerX = xLeft + boxWidth / 2;
           const centerY = yTop + boxHeight / 2;
-          const displayPrice = priceLevel + GRID_Y_DOLLARS / 2;
 
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -554,19 +577,27 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
           // Multiplier
           if (tradeMode !== 'open-position') {
             ctx.font = 'bold 10px monospace';
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = `rgba(255, 255, 255, ${cellAlpha})`;
             ctx.shadowBlur = 4;
             ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
             ctx.fillText(`${(displayMult / 100).toFixed(2)}x`, centerX, centerY - 6);
           }
 
-          // Price
+          // Profit = betAmount * (multiplier - 1)
+          const parsedBet = parseFloat(betAmount) || 10;
+          const profit = parsedBet * (displayMult / 100 - 1);
+          const profitLabel = profit >= 0.01
+            ? `+$${profit.toFixed(2)}`
+            : `+$${profit.toFixed(4)}`;
+
+          const multiplierVal = displayMult / 100;
+          const [pr, pg, pb] = multiplierVal < 2 ? [249, 115, 22] : multiplierVal < 5 ? [250, 204, 21] : [74, 222, 128];
           ctx.font = '600 9px monospace';
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = `rgba(${pr}, ${pg}, ${pb}, ${cellAlpha})`;
           ctx.shadowBlur = 4;
           ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
           ctx.fillText(
-            `$${displayPrice.toFixed(priceDecimals)}`,
+            tradeMode !== 'open-position' ? profitLabel : `$${(priceLevel + GRID_Y_DOLLARS / 2).toFixed(priceDecimals)}`,
             centerX,
             tradeMode !== 'open-position' ? centerY + 6 : centerY,
           );
@@ -781,6 +812,57 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
         ctx.restore();
       });
     }
+
+    // --- Draw Click Animations ---
+    const ANIM_DURATION = 600;
+    const animNow = Date.now();
+    clickAnimationsRef.current = clickAnimationsRef.current.filter(
+      (a) => animNow - a.startMs < ANIM_DURATION,
+    );
+    clickAnimationsRef.current.forEach((anim) => {
+      const t = (animNow - anim.startMs) / ANIM_DURATION; // 0 → 1
+
+      // Spring scale: 1 → 1.3 (peak at t≈0.25) → 1.0 with elastic feel
+      const scale = 1 + 0.3 * Math.sin(Math.PI * t) * Math.exp(-3.5 * t);
+      const alpha = Math.pow(1 - t, 1.5);
+
+      const cx = anim.xLeft + anim.w / 2;
+      const cy = anim.yTop + anim.h / 2;
+      const sw = anim.w * scale;
+      const sh = anim.h * scale;
+      const sx = cx - sw / 2;
+      const sy = cy - sh / 2;
+
+      ctx.save();
+
+      // Bright fill flash (strongest early, fades fast)
+      ctx.fillStyle = `rgba(168, 85, 247, ${alpha * 0.45})`;
+      ctx.fillRect(sx, sy, sw, sh);
+
+      // Inner glow (lighter purple)
+      ctx.fillStyle = `rgba(216, 180, 254, ${alpha * 0.25})`;
+      ctx.fillRect(
+        cx - (sw * 0.6) / 2,
+        cy - (sh * 0.6) / 2,
+        sw * 0.6,
+        sh * 0.6,
+      );
+
+      // Expanding border
+      ctx.strokeStyle = `rgba(192, 132, 252, ${alpha * 0.9})`;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(sx, sy, sw, sh);
+
+      // Second outer border ring (slightly bigger, more transparent)
+      const scale2 = 1 + 0.5 * Math.sin(Math.PI * t) * Math.exp(-3 * t);
+      const sw2 = anim.w * scale2;
+      const sh2 = anim.h * scale2;
+      ctx.strokeStyle = `rgba(168, 85, 247, ${alpha * 0.4})`;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cx - sw2 / 2, cy - sh2 / 2, sw2, sh2);
+
+      ctx.restore();
+    });
   }, [
     dimensions,
     interpolatedHistory,
@@ -794,6 +876,7 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
     isFocusMode,
     isDragging,
     GRID_Y_DOLLARS,
+    betAmount,
     tradeMode,
     isPlacingBet,
     gridIntervalSeconds,
