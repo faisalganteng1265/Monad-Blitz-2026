@@ -59,9 +59,8 @@ export class ExpiryCleanup {
       const latestOracle = latestPrices[bet.symbolName];
       if (latestOracle) {
         const latestPrice8 = BigInt(Math.round(latestOracle.price * 1e8));
-        const wonNow = bet.direction === 'UP'
-          ? latestPrice8 >= bet.targetPrice
-          : latestPrice8 <= bet.targetPrice;
+        const gridHalf = bet.targetPrice / 2000n;
+        const wonNow = latestPrice8 >= bet.targetPrice - gridHalf && latestPrice8 <= bet.targetPrice + gridHalf;
 
         if (wonNow) {
           const winPublishTime = Number(bet.expiry) - 1;

@@ -73,22 +73,26 @@ export class WinDetector {
 
     for (const [betId, bet] of this.scanner.getActiveBets()) {
       if (this.fired.has(betId)) continue;
-
-      // Allow 30s grace past expiry to recover from price feed lag
       if (now > bet.expiry + 30n) continue;
       if (bet.symbolName !== symbol) continue;
 
-      const won = bet.direction === 'UP'
-        ? price >= bet.targetPrice
-        : price <= bet.targetPrice;
+      // Only check when we're inside the bet's time window
+      // boxStartTime = expiry - GRID_X_SECONDS (10s), matches frontend grid column
+      const boxStartTime = bet.expiry - 10n;
+      if (now < boxStartTime) continue;
 
-      if (won) {
-        // Clamp to 1s before expiry so the Pyth VAA is within the bet window
-        const clampedTime = Math.min(publishTime, Number(bet.expiry) - 1);
+      // Range-based win: price must enter the grid box (center ± 0.05% of target)
+      // Matches frontend DEFAULT_GRID_Y_PERCENT = 0.001, halfCell = 0.05% of price
+      const gridHalf = bet.targetPrice / 2000n; // 0.05% of targetPrice
+      const boxMin = bet.targetPrice - gridHalf;
+      const boxMax = bet.targetPrice + gridHalf;
+      const priceInBox = price >= boxMin && price <= boxMax;
+
+      if (priceInBox) {
         this.logger.info(
-          `Win detected: betId=${betId} ${symbol} ${bet.direction} target=${bet.targetPrice} price=${price} publishTime=${clampedTime}`,
+          `Win detected: betId=${betId} ${symbol} target=${bet.targetPrice} price=${price} box=[${boxMin},${boxMax}]`,
         );
-        this._fire({ betId, publishTime: clampedTime });
+        this._fire({ betId, publishTime });
       }
     }
   }
