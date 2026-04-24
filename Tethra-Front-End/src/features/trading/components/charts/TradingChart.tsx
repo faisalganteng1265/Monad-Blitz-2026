@@ -10,9 +10,10 @@ import { ALL_MARKETS } from '@/features/trading/constants/markets';
 import { useMarketWebSocket } from '@/features/trading/hooks/useMarketWebSocket';
 import PerSecondChart from '@/components/charts/PerSecondChart';
 import { mergeMarketsWithOracle } from '@/features/trading/lib/marketUtils';
-import { useOneTapProfit } from '@/features/trading/hooks/useOneTapProfitBetting';
 import { formatDynamicUsd, formatMarketPair } from '@/features/trading/lib/marketUtils';
 import { useUSDCBalance } from '@/hooks/data/useUSDCBalance';
+import { usePlaceBet } from '@/features/trading/hooks/usePlaceBet';
+import { getMultiplier } from '@/features/trading/lib/multiplierEngine';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,8 +33,8 @@ const TradingChart: React.FC = () => {
     contextActiveMarket?.symbol || baseMarkets[0].symbol,
   );
 
-  const tapToTrade = useTapToTrade();
-  const { placeBet, isPlacingBet, activeBets, sessionPnL } = useOneTapProfit();
+  const { isActive, collateralPerTap } = useTapToTrade();
+  const { placeBet, isPending } = usePlaceBet();
   const { usdcBalance } = useUSDCBalance();
 
   const { marketDataMap, oraclePrices } = useMarketWebSocket(baseMarkets);
@@ -99,19 +100,24 @@ const TradingChart: React.FC = () => {
     targetPrice: number,
     targetTime: number,
     entryPrice: number,
-    entryTime: number,
+    _entryTime: number,
   ) => {
-    if (!activeMarket) return;
+    if (!activeMarket || !isActive) return;
+    const now = Math.floor(Date.now() / 1000);
+    const expirySeconds = Math.max(1, targetTime - now);
+    const targetPriceBigInt = BigInt(Math.round(targetPrice * 1e8));
+    const entryPriceBigInt = BigInt(Math.round(entryPrice * 1e8));
+    const expectedMultiplier = getMultiplier(entryPriceBigInt, targetPriceBigInt, expirySeconds);
+
     try {
-      await placeBet({
-        symbol: activeMarket.symbol,
-        betAmount: tapToTrade.betAmount || '10',
-        targetPrice: targetPrice.toString(),
-        targetTime,
-        entryPrice: entryPrice.toString(),
-        entryTime,
+      const tx = await placeBet({
+        symbolName: activeMarket.symbol,
+        targetPrice: targetPriceBigInt,
+        collateralUsdc: collateralPerTap,
+        expirySeconds,
+        expectedMultiplier,
       });
-      toast.success('Bet placed!');
+      if (tx) toast.success('Bet placed!');
     } catch (error: any) {
       toast.error(error?.message || 'Failed to place bet');
     }
@@ -185,13 +191,6 @@ const TradingChart: React.FC = () => {
             {isHeaderPositive ? '+' : ''}
             {headerPriceChange.toFixed(2)}%
           </span>
-          <span className="text-xs text-text-secondary pt-1">
-            Session PnL:{' '}
-            <span className={sessionPnL >= 0 ? 'text-success' : 'text-error'}>
-              {sessionPnL >= 0 ? '+' : ''}
-              {formatDynamicUsd(sessionPnL)}
-            </span>
-          </span>
         </div>
       </div>
 
@@ -206,11 +205,10 @@ const TradingChart: React.FC = () => {
             currentPrice={parseFloat(
               currentOraclePrice?.price?.toString() || currentMarketData?.price || '0',
             )}
-            betAmount={tapToTrade.betAmount}
-            isBinaryTradingEnabled={true}
-            isPlacingBet={isPlacingBet}
+            betAmount={collateralPerTap.toString()}
+            isBinaryTradingEnabled={isActive}
+            isPlacingBet={isPending}
             logoUrl={activeMarket.logoUrl}
-            activeBets={activeBets}
             tradeMode="one-tap-profit"
             showXAxis={true}
             showYAxis={true}

@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { PerSecondChartProps } from './types';
 import { DEFAULT_GRID_X_SECONDS, DEFAULT_GRID_Y_PERCENT } from './constants';
 import { calculateMultiplier } from './utils';
-import { Bet } from '@/features/trading/hooks/useOneTapProfitBetting';
+import { Bet } from '@/features/trading/types';
 
 // Hooks
 import { useChartDimensions } from './hooks/useChartDimensions';

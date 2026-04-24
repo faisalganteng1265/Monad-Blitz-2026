@@ -26,3 +26,16 @@ export interface FuturesData {
 export interface OraclePrice {
   price: number;
 }
+
+export interface Bet {
+  betId: string;
+  symbol: string;
+  targetPrice: string;
+  targetTime: number;
+  entryPrice: string;
+  entryTime: number;
+  direction: 'UP' | 'DOWN';
+  collateral: number;
+  multiplier: number;
+  status: 'ACTIVE' | 'WON' | 'EXPIRED';
+}

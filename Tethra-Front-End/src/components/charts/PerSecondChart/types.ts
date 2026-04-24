@@ -1,4 +1,4 @@
-import { Bet } from '@/features/trading/hooks/useOneTapProfitBetting';
+import { Bet } from '@/features/trading/types';
 export interface PricePoint {
   time: number;
   price: number;

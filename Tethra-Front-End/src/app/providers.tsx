@@ -5,12 +5,12 @@ import { PrivyProvider } from '@privy-io/react-auth';
 import { WagmiProvider } from '@privy-io/wagmi';
 import { createConfig, http } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { baseSepolia } from 'wagmi/chains';
 import { Toaster } from '@/components/ui/sonner';
+import { monadTestnet } from '@/config/chains';
 
 export const config = createConfig({
-  chains: [baseSepolia],
-  transports: { [baseSepolia.id]: http() },
+  chains: [monadTestnet],
+  transports: { [monadTestnet.id]: http() },
 });
 
 const queryClient = new QueryClient();
@@ -38,8 +38,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
             createOnLogin: 'all-users',
           },
         },
-        defaultChain: baseSepolia,
-        supportedChains: [baseSepolia],
+        defaultChain: monadTestnet,
+        supportedChains: [monadTestnet],
       }}
     >
       <QueryClientProvider client={queryClient}>
