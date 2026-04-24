@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useEmbeddedWallet } from '@/features/wallet/hooks/useEmbeddedWallet';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
@@ -13,10 +13,22 @@ export interface BinaryOrder {
   entryTime: number;
   targetTime: number;
   multiplier: number;
-  status: 'ACTIVE' | 'WON' | 'LOST' | 'CANCELLED';
+  status: 'ACTIVE' | 'WON' | 'EXPIRED' | 'LOST' | 'CANCELLED';
+  trader?: string;
   settledAt?: number;
   settlePrice?: string;
-  createdAt: number;
+  createdAt?: number;
+}
+
+function normalizeBet(bet: any): BinaryOrder {
+  const targetPrice = parseFloat(bet.targetPrice) / 1e8;
+  const entryPrice = parseFloat(bet.entryPrice ?? bet.targetPrice) / 1e8;
+  const direction: 'UP' | 'DOWN' = bet.direction ?? (targetPrice >= entryPrice ? 'UP' : 'DOWN');
+  return {
+    ...bet,
+    direction,
+    status: bet.status ?? 'ACTIVE',
+  };
 }
 
 export function useBinaryOrders() {
@@ -24,7 +36,7 @@ export function useBinaryOrders() {
   const [isLoading, setIsLoading] = useState(true);
   const { address } = useEmbeddedWallet();
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!address) {
       setIsLoading(false);
       return;
@@ -32,50 +44,53 @@ export function useBinaryOrders() {
 
     try {
       setIsLoading(true);
-      const url = `${BACKEND_URL}/api/one-tap/bets?trader=${address}`;
-      const response = await fetch(url);
 
-      if (response.ok) {
-        const data = await response.json();
+      // Primary: fast in-memory query (active bets only)
+      const activeRes = await fetch(`${BACKEND_URL}/api/one-tap/active?trader=${address}`);
+      const activeData = activeRes.ok ? await activeRes.json() : null;
+      const activeBets: BinaryOrder[] = (activeData?.success && activeData.data)
+        ? activeData.data.map(normalizeBet)
+        : [];
 
-        if (data.success && data.data) {
-          // Transform backend data to component format
-          const transformedOrders = data.data.map((bet: any) => {
-            const entryPrice = parseFloat(bet.entryPrice) / 100000000; // 8 decimals
-            const targetPrice = parseFloat(bet.targetPrice) / 100000000; // 8 decimals
-            const direction = targetPrice > entryPrice ? 'UP' : 'DOWN';
-
-            return {
-              ...bet,
-              direction,
-            };
-          });
-          setOrders(transformedOrders);
-        } else {
-          setOrders([]);
+      // Secondary: on-chain historical query for settled bets (won/expired)
+      // Run in background — don't block active display
+      let historicalBets: BinaryOrder[] = [];
+      try {
+        const histRes = await fetch(`${BACKEND_URL}/api/one-tap/bets?trader=${address}`);
+        const histData = histRes.ok ? await histRes.json() : null;
+        if (histData?.success && histData.data) {
+          historicalBets = histData.data
+            .map(normalizeBet)
+            .filter((b: BinaryOrder) => b.status !== 'ACTIVE'); // active already covered above
         }
-      } else {
-        setOrders([]);
+      } catch {
+        // Historical query failing (slow RPC) is non-fatal
       }
+
+      // Merge: active bets first, then history (dedup by betId)
+      const seen = new Set<string>();
+      const merged: BinaryOrder[] = [];
+      for (const b of [...activeBets, ...historicalBets]) {
+        if (!seen.has(b.betId)) {
+          seen.add(b.betId);
+          merged.push(b);
+        }
+      }
+
+      setOrders(merged);
     } catch (error) {
-      console.error('❌ Error fetching binary orders:', error);
+      console.error('Error fetching orders:', error);
       setOrders([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [address]);
 
   useEffect(() => {
     fetchOrders();
-
-    // Poll every 3 seconds to get updates
     const interval = setInterval(fetchOrders, 3000);
     return () => clearInterval(interval);
-  }, [address]);
+  }, [fetchOrders]);
 
-  return {
-    orders,
-    isLoading,
-    refetch: fetchOrders,
-  };
+  return { orders, isLoading, refetch: fetchOrders };
 }

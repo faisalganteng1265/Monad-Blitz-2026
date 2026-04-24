@@ -14,17 +14,21 @@ async function main(): Promise<void> {
   logger.info('Starting TapX solver...');
 
   const scanner = new BetScanner();
-  const detector = new WinDetector(scanner);
   const priceWatcher = new PriceWatcher();
-  const settler = new Settler(scanner, detector);
-  const cleanup = new ExpiryCleanup(scanner);
+  const detector = new WinDetector(scanner, priceWatcher);
+  const settler = new Settler(scanner);
+  const cleanup = new ExpiryCleanup(scanner, detector, settler, priceWatcher);
 
-  // Wire price updates → win detection
+  // Wire win detection → immediate settlement
+  detector.onWin((entry) => settler.settle(entry));
+
+  // Wire price updates → win detection (realtime ticks)
   priceWatcher.onPriceUpdate((update) => detector.onPriceUpdate(update));
 
   // Start all services
   await scanner.start();
   priceWatcher.start();
+  detector.start();   // starts 1s sweep
   settler.start();
   cleanup.start();
 
@@ -39,6 +43,7 @@ async function main(): Promise<void> {
   // Graceful shutdown
   const shutdown = async () => {
     logger.info('Shutting down...');
+    detector.stop();
     settler.stop();
     cleanup.stop();
     priceWatcher.shutdown();

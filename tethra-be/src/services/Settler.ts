@@ -1,10 +1,10 @@
-import { createPublicClient, createWalletClient, http, parseEther } from 'viem';
+import { createWalletClient, http, parseEther } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { Logger } from '../utils/Logger';
 import { config, TAP_BET_MANAGER_ABI } from '../config';
 import type { ActiveBet } from '../types';
 import type { BetScanner } from './BetScanner';
-import type { WinDetector } from './WinDetector';
+import type { WinEntry } from './WinDetector';
 
 const MONAD_TESTNET = {
   id: 10143,
@@ -16,58 +16,53 @@ const MONAD_TESTNET = {
 export class Settler {
   private logger = new Logger('Settler');
   private account = privateKeyToAccount(config.privateKey);
-  private publicClient = createPublicClient({ chain: MONAD_TESTNET, transport: http(config.rpcUrl) });
-  private walletClient = createWalletClient({ account: privateKeyToAccount(config.privateKey), chain: MONAD_TESTNET, transport: http(config.rpcUrl) });
+  private walletClient = createWalletClient({
+    account: privateKeyToAccount(config.privateKey),
+    chain: MONAD_TESTNET,
+    transport: http(config.rpcUrl),
+  });
   private scanner: BetScanner;
-  private detector: WinDetector;
-  private running = false;
+  private inFlight = new Set<bigint>(); // prevent duplicate settlement attempts
 
-  constructor(scanner: BetScanner, detector: WinDetector) {
+  constructor(scanner: BetScanner) {
     this.scanner = scanner;
-    this.detector = detector;
   }
 
   start(): void {
-    this.running = true;
-    this._loop();
+    this.logger.info('Settler ready — immediate settlement on win detection');
   }
 
-  stop(): void {
-    this.running = false;
+  stop(): void {}
+
+  /**
+   * Called immediately when WinDetector detects a win.
+   * Fires settlement without simulation delay.
+   */
+  settle(entry: WinEntry): void {
+    if (this.inFlight.has(entry.betId)) return;
+    this.inFlight.add(entry.betId);
+    this._settle(entry).finally(() => this.inFlight.delete(entry.betId));
   }
 
-  private async _loop(): Promise<void> {
-    while (this.running) {
-      const pending = this.detector.drainQueue();
-      for (const betId of pending) {
-        await this._settle(betId);
-      }
-      await new Promise(r => setTimeout(r, 500)); // 500ms poll
-    }
-  }
-
-  private async _settle(betId: bigint): Promise<void> {
+  private async _settle(entry: WinEntry): Promise<void> {
+    const { betId, publishTime } = entry;
     const bet = this.scanner.getActiveBets().get(betId);
-    if (!bet) return; // already resolved
+    if (!bet) {
+      this.logger.warn(`Bet ${betId} not in active map — skipping`);
+      return;
+    }
+
+    this.logger.info(`Settling win: betId=${betId} ${bet.symbolName} ${bet.direction} publishTime=${publishTime}`);
+
+    let priceUpdateData: `0x${string}`[];
+    try {
+      priceUpdateData = await this._fetchProof(bet);
+    } catch (err: any) {
+      this.logger.error(`Failed to fetch Pyth proof for bet ${betId}: ${err?.message}`, err);
+      return;
+    }
 
     try {
-      const priceUpdateData = await this._fetchProof(bet);
-
-      // Pre-simulate to catch already-settled or condition-not-met cases
-      try {
-        await this.publicClient.simulateContract({
-          address: config.tapBetManager,
-          abi: TAP_BET_MANAGER_ABI,
-          functionName: 'settleBetWin',
-          args: [betId, priceUpdateData],
-          account: this.account,
-          value: parseEther('0.001'), // enough for Pyth fee
-        });
-      } catch (simErr: any) {
-        this.logger.warn(`Simulation failed for bet ${betId}: ${simErr?.message ?? simErr} — skipping`);
-        return;
-      }
-
       const hash = await this.walletClient.writeContract({
         address: config.tapBetManager,
         abi: TAP_BET_MANAGER_ABI,
@@ -76,29 +71,36 @@ export class Settler {
         value: parseEther('0.001'),
         account: this.account,
       });
-
       this.logger.info(`settleBetWin submitted: betId=${betId} tx=${hash}`);
-
-      await this.publicClient.waitForTransactionReceipt({ hash });
-      this.logger.info(`settleBetWin confirmed: betId=${betId} tx=${hash}`);
-
     } catch (err: any) {
-      // Retry once with a fresh proof
-      this.logger.warn(`Settlement failed for bet ${betId}: ${err?.message ?? err} — retrying once`);
+      const msg: string = err?.message ?? String(err);
+
+      // Bet already settled on-chain — remove from scanner so ExpiryCleanup stops retrying
+      if (msg.includes('bet expired') || msg.includes('already settled') || msg.includes('not active')) {
+        this.logger.warn(`Bet ${betId} already settled on-chain — removing from active map`);
+        this.scanner.removeBet(betId);
+        return;
+      }
+
+      // Transient error — retry once with fresh proof
+      this.logger.warn(`Settlement failed for bet ${betId}: ${msg} — retrying with fresh proof`);
       try {
-        const freshData = await this._fetchProof(bet);
+        const freshProof = await this._fetchProof(bet);
         const hash = await this.walletClient.writeContract({
           address: config.tapBetManager,
           abi: TAP_BET_MANAGER_ABI,
           functionName: 'settleBetWin',
-          args: [betId, freshData],
+          args: [betId, freshProof],
           value: parseEther('0.001'),
           account: this.account,
         });
-        await this.publicClient.waitForTransactionReceipt({ hash });
         this.logger.info(`Retry succeeded: betId=${betId} tx=${hash}`);
-      } catch (retryErr) {
-        this.logger.error(`Retry failed for bet ${betId} — discarding`, retryErr);
+      } catch (retryErr: any) {
+        const retryMsg: string = retryErr?.message ?? String(retryErr);
+        if (retryMsg.includes('bet expired') || retryMsg.includes('already settled') || retryMsg.includes('not active')) {
+          this.scanner.removeBet(betId);
+        }
+        this.logger.error(`Retry failed for bet ${betId}: ${retryMsg}`);
       }
     }
   }
@@ -107,9 +109,18 @@ export class Settler {
     const priceId = this._priceIdForSymbol(bet.symbolName);
     if (!priceId) throw new Error(`No priceId for symbol ${bet.symbolName}`);
 
+    // Always use latest proof — PriceAdapter reads price directly from VAA bytes
     const url = `${config.pythHermesUrl}/v2/updates/price/latest?ids[]=${priceId}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Hermes fetch failed: ${res.status}`);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
+    let res: Response;
+    try {
+      res = await fetch(url, { signal: controller.signal });
+    } finally {
+      clearTimeout(timeout);
+    }
+    if (!res.ok) throw new Error(`Hermes fetch failed: ${res.status} for ${url}`);
 
     const data = await res.json() as any;
     const vaas: string[] = data.binary?.data ?? [];

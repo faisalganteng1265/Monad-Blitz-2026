@@ -228,7 +228,8 @@ contract TapBetManager is Ownable, ReentrancyGuard, Pausable {
         Bet storage bet = bets[betId];
         require(bet.betId == betId && bet.user != address(0), "TBM: bet not found");
         require(bet.status == BetStatus.ACTIVE, "TBM: not active");
-        require(block.timestamp <= bet.expiry,  "TBM: bet expired");
+        // Allow settlement up to 30s after expiry to absorb network/settlement latency
+        require(block.timestamp <= bet.expiry + 30, "TBM: settlement window passed");
 
         bytes32 priceId = priceAdapter.priceIds(bet.symbol);
         (uint256 price,) = priceAdapter.verifyAndGetPrice{value: msg.value}(priceUpdateData, priceId);

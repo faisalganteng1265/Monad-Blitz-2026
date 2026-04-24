@@ -28,6 +28,10 @@ export class BetScanner {
     return this.activeBets;
   }
 
+  removeBet(betId: bigint): void {
+    this.activeBets.delete(betId);
+  }
+
   isSyncing(): boolean {
     return this.syncing;
   }

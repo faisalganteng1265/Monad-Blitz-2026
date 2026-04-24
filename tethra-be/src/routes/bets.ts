@@ -38,11 +38,15 @@ function serializeBet(bet: ActiveBet) {
 export function createBetsRouter(scanner: BetScanner): Router {
   const router = Router();
 
-  // GET /api/one-tap/active — all active bets from in-memory scanner
-  router.get('/active', (_req: Request, res: Response) => {
+  // GET /api/one-tap/active?trader=0x... — active bets (optionally filtered by trader)
+  router.get('/active', (req: Request, res: Response) => {
+    const { trader } = req.query;
     const syncing = scanner.isSyncing();
-    const bets = Array.from(scanner.getActiveBets().values()).map(serializeBet);
-    res.json({ success: true, data: bets, ...(syncing && { syncing: true }) });
+    let bets = Array.from(scanner.getActiveBets().values());
+    if (trader && typeof trader === 'string' && isAddress(trader)) {
+      bets = bets.filter(b => b.user.toLowerCase() === trader.toLowerCase());
+    }
+    res.json({ success: true, data: bets.map(serializeBet), ...(syncing && { syncing: true }) });
   });
 
   // GET /api/one-tap/bets?trader=0x... — all bets for a specific trader (on-chain)

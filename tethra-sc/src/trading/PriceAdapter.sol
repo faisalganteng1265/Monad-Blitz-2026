@@ -63,9 +63,20 @@ contract PriceAdapter is Ownable {
         bytes32 priceId
     ) external payable returns (uint256 price, uint256 publishTime) {
         uint256 fee = pyth.getUpdateFee(priceUpdateData);
-        pyth.updatePriceFeeds{value: fee}(priceUpdateData);
 
-        PythStructs.Price memory p = pyth.getPriceNoOlderThan(priceId, maxPriceAge);
+        bytes32[] memory ids = new bytes32[](1);
+        ids[0] = priceId;
+
+        // Read price directly from the submitted VAA bytes — not from on-chain cache
+        PythStructs.PriceFeed[] memory feeds = pyth.parsePriceFeedUpdates{value: fee}(
+            priceUpdateData,
+            ids,
+            0,
+            type(uint64).max
+        );
+
+        require(feeds.length > 0, "PriceAdapter: no price feed");
+        PythStructs.Price memory p = feeds[0].price;
 
         require(p.price > 0, "PriceAdapter: non-positive price");
         require(p.expo == -8, "PriceAdapter: unexpected exponent");
@@ -75,7 +86,7 @@ contract PriceAdapter is Ownable {
         require(confBps <= maxConfidenceBps, "PriceAdapter: price confidence too wide");
 
         price = uint256(uint64(p.price));
-        publishTime = p.publishTime;
+        publishTime = uint256(p.publishTime);
     }
 
     /**
