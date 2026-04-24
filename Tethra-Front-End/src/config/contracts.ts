@@ -32,6 +32,24 @@ export const PYTH_ETH_PRICE_ID =
 
 export const USDC_DECIMALS = 6;
 
+export const MOCK_USDC_ABI = [
+  {
+    type: 'function',
+    name: 'faucet',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    constant: true,
+    inputs: [{ name: '_owner', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: 'balance', type: 'uint256' }],
+    type: 'function',
+    stateMutability: 'view',
+  },
+] as const;
+
 // Legacy backend URL kept for compatibility with existing hooks
 export const BACKEND_API_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';

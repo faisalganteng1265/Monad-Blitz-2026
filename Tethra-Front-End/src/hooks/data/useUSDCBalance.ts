@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { createPublicClient, http, formatUnits } from 'viem';
-import { baseSepolia } from 'wagmi/chains';
+import { monadTestnet } from '@/config/chains';
 import { USDC_ADDRESS, USDC_DECIMALS } from '@/config/contracts';
 import { useEmbeddedWallet } from '@/features/wallet/hooks/useEmbeddedWallet';
 
@@ -30,7 +30,7 @@ export const useUSDCBalance = () => {
       setIsLoadingBalance(true);
       try {
         const publicClient = createPublicClient({
-          chain: baseSepolia,
+          chain: monadTestnet,
           transport: http(),
         });
 

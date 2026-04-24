@@ -35,7 +35,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         loginMethods: ['email', 'google', 'wallet'],
         embeddedWallets: {
           ethereum: {
-            createOnLogin: 'all-users',
+            createOnLogin: 'off',
           },
         },
         defaultChain: monadTestnet,

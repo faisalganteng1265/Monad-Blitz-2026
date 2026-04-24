@@ -65,7 +65,7 @@ const ClaimUSDCButton: React.FC = () => {
             <div>
               View on Explorer:{' '}
               <a
-                href={`https://sepolia.basescan.org/tx/${txHash}`}
+                href={`https://testnet.monadexplorer.com/tx/${txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"

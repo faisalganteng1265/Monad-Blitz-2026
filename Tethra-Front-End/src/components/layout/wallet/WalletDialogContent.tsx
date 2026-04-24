@@ -1,32 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Copy, ExternalLink, LogOut, Wallet, Key, DollarSign, X } from 'lucide-react';
+import React from 'react';
+import { Copy, ExternalLink, LogOut, Wallet, DollarSign, X } from 'lucide-react';
 import { DialogClose } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { useWalletBalance } from '@/hooks/wallet/useWalletBalance';
 import { useWalletActions } from '@/hooks/wallet/useWalletActions';
 import { useUSDCFaucet } from '@/hooks/wallet/useUSDCFaucet';
 
 export const WalletDialogContent: React.FC = () => {
-  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [isExportConfirmed, setIsExportConfirmed] = useState(false);
   const { usdcBalance, refetchBalance, bumpBalance } = useWalletBalance();
   const {
     shortAddress,
     handleCopyAddress,
     handleViewExplorer,
-    handleExportPrivateKey,
     handleDisconnect,
   } = useWalletActions();
   const { isClaiming, handleClaimUSDC } = useUSDCFaucet({
@@ -73,53 +59,6 @@ export const WalletDialogContent: React.FC = () => {
           >
             <ExternalLink className="w-4 h-4 text-slate-400 hover:text-slate-200" />
           </button>
-
-          <AlertDialog
-            open={isExportDialogOpen}
-            onOpenChange={(open) => {
-              setIsExportDialogOpen(open);
-              if (!open) setIsExportConfirmed(false);
-            }}
-          >
-            <AlertDialogTrigger asChild>
-              <button
-                className="p-2.5 bg-slate-800/50 hover:bg-slate-700/50 rounded-xl transition-colors cursor-pointer"
-                title="Export Private Key"
-              >
-                <Key className="w-4 h-4 text-slate-400 hover:text-slate-200" />
-              </button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-[#131B26] border-gray-800 text-white">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Export private key?</AlertDialogTitle>
-                <AlertDialogDescription className="text-gray-400">
-                  This is a one-time export. If you log in again, your embedded wallet may
-                  change. Anyone with this key can access your funds—store it safely.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <label className="flex items-start gap-2 text-sm text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={isExportConfirmed}
-                  onChange={(e) => setIsExportConfirmed(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-gray-600 bg-transparent text-red-500 focus:ring-0"
-                />
-                <span>I understand</span>
-              </label>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white">
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleExportPrivateKey}
-                  disabled={!isExportConfirmed}
-                  className="bg-red-600 hover:bg-red-700 text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Export
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
 
           <button
             onClick={handleDisconnect}
