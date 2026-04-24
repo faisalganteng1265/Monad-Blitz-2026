@@ -16,5 +16,3 @@ test/**/*.t.sol.d
 # Docs
 docs/
 
-# Dotenv file
-.env

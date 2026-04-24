@@ -29,6 +29,7 @@ contract Deploy is Script {
     function run() external {
         address pythContract = vm.envAddress("PYTH_CONTRACT");
         address usdcAddress  = vm.envAddress("USDC_ADDRESS");
+        address settlerAddress = vm.envAddress("SETTLER_ADDRESS");
 
         vm.startBroadcast();
 
@@ -56,6 +57,9 @@ contract Deploy is Script {
         // ── Post-deploy wiring ──────────────────────────────────────────────
         vault.setBetManager(address(manager));
         console.log("Vault betManager set to TapBetManager");
+
+        manager.setSettler(settlerAddress);
+        console.log("Settler set to:", settlerAddress);
 
         priceAdapter.setPriceId(keccak256("BTC"), BTC_PYTH_ID);
         priceAdapter.setPriceId(keccak256("ETH"), ETH_PYTH_ID);

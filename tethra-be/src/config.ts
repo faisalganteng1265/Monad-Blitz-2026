@@ -37,7 +37,7 @@ export const TAP_BET_MANAGER_ABI = [
     { name: 'status', type: 'uint8' },
     { name: 'placedAt', type: 'uint256' },
   ]}], stateMutability: 'view' },
-  { type: 'function', name: 'settleBetWin', inputs: [{ name: 'betId', type: 'uint256' }, { name: 'priceUpdateData', type: 'bytes[]' }], outputs: [], stateMutability: 'payable' },
+  { type: 'function', name: 'settleBetWin', inputs: [{ name: 'betId', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
   { type: 'function', name: 'batchSettleExpired', inputs: [{ name: 'betIds', type: 'uint256[]' }], outputs: [], stateMutability: 'nonpayable' },
   { type: 'function', name: 'settleExpired', inputs: [{ name: 'betId', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
   { type: 'event', name: 'BetPlaced', inputs: [

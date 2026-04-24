@@ -104,6 +104,7 @@ const TradingChart: React.FC = () => {
       const tx = await placeBet({
         symbolName: activeMarket.symbol,
         targetPrice: targetPriceBigInt,
+        entryPrice: entryPriceBigInt,
         collateralUsdc: collateralPerTap,
         expirySeconds,
         expectedMultiplier,

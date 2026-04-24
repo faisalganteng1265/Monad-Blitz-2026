@@ -65,6 +65,7 @@ contract TapBetManager is Ownable, ReentrancyGuard, Pausable {
 
     uint256 public SETTLER_FEE_BPS = 50; // 0.5%
     uint256 public constant MAX_MULTIPLIER_SLIPPAGE_BPS = 100; // 1% tolerance
+    address public settler;
 
     // ─── Events ────────────────────────────────────────────────────────────────
 
@@ -105,7 +106,17 @@ contract TapBetManager is Ownable, ReentrancyGuard, Pausable {
         usdc             = IERC20(_usdc);
     }
 
+    modifier onlySettler() {
+        require(msg.sender == settler, "TBM: not settler");
+        _;
+    }
+
     // ─── Owner controls ────────────────────────────────────────────────────────
+
+    function setSettler(address _settler) external onlyOwner {
+        require(_settler != address(0), "TBM: zero settler");
+        settler = _settler;
+    }
 
     function setSettlerFeeBps(uint256 feeBps) external onlyOwner {
         require(feeBps <= 500, "TBM: fee too high");
@@ -129,52 +140,40 @@ contract TapBetManager is Ownable, ReentrancyGuard, Pausable {
     function placeBet(
         bytes32 symbol,
         uint256 targetPrice,
+        uint256 entryPrice,
         uint256 collateral,
         uint256 expiry,
         uint256 expectedMultiplier
     ) external nonReentrant whenNotPaused returns (uint256 betId) {
         require(targetPrice > 0,                  "TBM: zero target price");
+        require(entryPrice  > 0,                  "TBM: zero entry price");
         require(collateral  > 0,                  "TBM: zero collateral");
         require(expiry > block.timestamp,         "TBM: expiry in past");
         require(expiry <= block.timestamp + 3600, "TBM: expiry too far");
 
         uint256 actualMultiplier = _validateAndGetMultiplier(
-            symbol, targetPrice, expiry, expectedMultiplier
+            entryPrice, targetPrice, expiry, expectedMultiplier
         );
 
-        betId = _storeBet(symbol, targetPrice, collateral, expiry, actualMultiplier);
+        betId = _storeBet(symbol, targetPrice, entryPrice, collateral, expiry, actualMultiplier);
 
-        // Pull collateral from user directly to vault, then notify vault
         usdc.safeTransferFrom(msg.sender, address(vault), collateral);
         vault.collectCollateral(collateral);
 
-        emit BetPlaced(
-            betId, msg.sender, symbol, targetPrice, collateral,
-            actualMultiplier,
-            targetPrice >= _cachedCurrentPrice(symbol) ? Direction.UP : Direction.DOWN,
-            expiry
-        );
-    }
-
-    function _cachedCurrentPrice(bytes32 symbol) internal view returns (uint256) {
-        (uint256 p,) = priceAdapter.getLatestPrice(priceAdapter.priceIds(symbol));
-        return p;
+        Direction direction = targetPrice >= entryPrice ? Direction.UP : Direction.DOWN;
+        emit BetPlaced(betId, msg.sender, symbol, targetPrice, collateral, actualMultiplier, direction, expiry);
     }
 
     function _validateAndGetMultiplier(
-        bytes32 symbol,
+        uint256 entryPrice,
         uint256 targetPrice,
         uint256 expiry,
         uint256 expectedMultiplier
     ) internal view returns (uint256 actualMultiplier) {
-        bytes32 priceId = priceAdapter.priceIds(symbol);
-        require(priceId != bytes32(0), "TBM: unknown symbol");
-
-        (uint256 currentPrice,) = priceAdapter.getLatestPrice(priceId);
-        require(currentPrice > 0, "TBM: no price available");
+        require(entryPrice > 0, "TBM: no price available");
 
         actualMultiplier = multiplierEngine.getMultiplier(
-            currentPrice, targetPrice, expiry - block.timestamp
+            entryPrice, targetPrice, expiry - block.timestamp
         );
 
         uint256 absDiff = actualMultiplier > expectedMultiplier
@@ -189,12 +188,12 @@ contract TapBetManager is Ownable, ReentrancyGuard, Pausable {
     function _storeBet(
         bytes32 symbol,
         uint256 targetPrice,
+        uint256 entryPrice,
         uint256 collateral,
         uint256 expiry,
         uint256 actualMultiplier
     ) internal returns (uint256 betId) {
-        (uint256 currentPrice,) = priceAdapter.getLatestPrice(priceAdapter.priceIds(symbol));
-        Direction direction = targetPrice >= currentPrice ? Direction.UP : Direction.DOWN;
+        Direction direction = targetPrice >= entryPrice ? Direction.UP : Direction.DOWN;
 
         betId = nextBetId++;
         bets[betId] = Bet({
@@ -216,41 +215,26 @@ contract TapBetManager is Ownable, ReentrancyGuard, Pausable {
     // ─── Settle win ────────────────────────────────────────────────────────────
 
     /**
-     * @notice Permissionless settlement. Caller submits a Pyth proof; if the price has touched
-     *         the target and the bet hasn't expired, caller earns SETTLER_FEE_BPS of the payout.
-     * @param betId            ID of the bet to settle
-     * @param priceUpdateData  Signed price update bytes[] from Pyth Hermes
+     * @notice Trusted settlement by designated solver. No proof required — solver monitors
+     *         Pyth prices directly and is trusted to only call when win condition is met.
+     * @param betId  ID of the bet to settle as won
      */
     function settleBetWin(
-        uint256 betId,
-        bytes[] calldata priceUpdateData
-    ) external payable nonReentrant {
+        uint256 betId
+    ) external nonReentrant onlySettler {
         Bet storage bet = bets[betId];
         require(bet.betId == betId && bet.user != address(0), "TBM: bet not found");
         require(bet.status == BetStatus.ACTIVE, "TBM: not active");
-        // Allow settlement up to 30s after expiry to absorb network/settlement latency
         require(block.timestamp <= bet.expiry + 30, "TBM: settlement window passed");
-
-        bytes32 priceId = priceAdapter.priceIds(bet.symbol);
-        (uint256 price,) = priceAdapter.verifyAndGetPrice{value: msg.value}(priceUpdateData, priceId);
-
-        bool won = bet.direction == Direction.UP
-            ? price >= bet.targetPrice
-            : price <= bet.targetPrice;
-
-        require(won, "TBM: win condition not met");
 
         bet.status = BetStatus.WON;
         _removeFromActive(betId);
 
-        uint256 totalPayout  = (bet.collateral * bet.multiplier) / 100;
-        uint256 settlerFee   = (totalPayout * SETTLER_FEE_BPS) / 10000;
-        uint256 userPayout   = totalPayout - settlerFee;
+        uint256 totalPayout = (bet.collateral * bet.multiplier) / 100;
 
-        vault.payout(bet.user,    userPayout);
-        vault.payout(msg.sender,  settlerFee);
+        vault.payout(bet.user, totalPayout);
 
-        emit BetWon(betId, bet.user, msg.sender, userPayout, settlerFee);
+        emit BetWon(betId, bet.user, msg.sender, totalPayout, 0);
     }
 
     // ─── Settle expired ────────────────────────────────────────────────────────

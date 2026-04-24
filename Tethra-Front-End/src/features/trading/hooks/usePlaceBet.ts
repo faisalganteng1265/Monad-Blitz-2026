@@ -18,6 +18,7 @@ const TAP_BET_MANAGER_ABI = [
     inputs: [
       { name: 'symbol', type: 'bytes32' },
       { name: 'targetPrice', type: 'uint256' },
+      { name: 'entryPrice', type: 'uint256' },
       { name: 'collateral', type: 'uint256' },
       { name: 'expiry', type: 'uint256' },
       { name: 'expectedMultiplier', type: 'uint256' },
@@ -47,6 +48,7 @@ const ERC20_ABI = [
 export interface PlaceBetParams {
   symbolName: string;       // e.g. "BTC"
   targetPrice: bigint;      // 8-decimal
+  entryPrice: bigint;       // 8-decimal — current price at click time
   collateralUsdc: number;   // human-readable USDC amount (e.g. 10)
   expirySeconds: number;    // seconds from now (e.g. 300)
   expectedMultiplier: number; // basis-100 from multiplierEngine.ts
@@ -104,6 +106,7 @@ export function usePlaceBet() {
         args: [
           symbolBytes32,
           params.targetPrice,
+          params.entryPrice,
           collateral,
           expiry,
           BigInt(params.expectedMultiplier),
