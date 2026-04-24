@@ -12,6 +12,7 @@ interface UseChartInteractionProps {
   setIsFocusMode: React.Dispatch<React.SetStateAction<boolean>>;
   hoveredCell: string | null;
   isPlacingBet: boolean;
+  isBinaryTradingEnabled?: boolean;
   isInteractionLocked?: boolean;
   resolveCellFromPoint?: (point: { x: number; y: number }) => string | null;
   onCellClick?: (
@@ -36,6 +37,7 @@ export const useChartInteraction = ({
   setIsFocusMode,
   hoveredCell,
   isPlacingBet,
+  isBinaryTradingEnabled = true,
   isInteractionLocked = false,
   resolveCellFromPoint,
   onCellClick,
@@ -126,6 +128,12 @@ export const useChartInteraction = ({
       point && resolveCellFromPoint ? resolveCellFromPoint(point) : hoveredCell;
 
     if (isDragging && !hasMoved && resolvedCell && onCellClick) {
+      if (!isBinaryTradingEnabled) {
+        toast.error('Press Start Trading to place bets');
+        setIsDragging(false);
+        setIsFocusMode(true);
+        return;
+      }
       if (isPlacingBet) {
         toast.error('Please wait, placing bet...');
         setIsDragging(false);
@@ -176,6 +184,7 @@ export const useChartInteraction = ({
       hasMoved,
       hoveredCell,
       isPlacingBet,
+      isBinaryTradingEnabled,
       priceHistory,
       currentPrice,
       onCellClick,

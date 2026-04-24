@@ -10,8 +10,8 @@ import { ALL_MARKETS } from '@/features/trading/constants/markets';
 import { useMarketWebSocket } from '@/features/trading/hooks/useMarketWebSocket';
 import PerSecondChart from '@/components/charts/PerSecondChart';
 import { mergeMarketsWithOracle } from '@/features/trading/lib/marketUtils';
-import { formatDynamicUsd, formatMarketPair } from '@/features/trading/lib/marketUtils';
-import { useUSDCBalance } from '@/hooks/data/useUSDCBalance';
+import { formatMarketPair } from '@/features/trading/lib/marketUtils';
+import { usePortfolioPnL } from '@/hooks/data/usePortfolioPnL';
 import { usePlaceBet } from '@/features/trading/hooks/usePlaceBet';
 import { getMultiplier } from '@/features/trading/lib/multiplierEngine';
 import WalletConnectButton from '@/components/layout/WalletConnectButton';
@@ -23,11 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const TradingChart: React.FC = () => {
-  const {
-    activeMarket: contextActiveMarket,
-    setActiveMarket,
-    setCurrentPrice,
-  } = useMarket();
+  const { activeMarket: contextActiveMarket, setActiveMarket, setCurrentPrice, currentPrice } = useMarket();
 
   const baseMarkets = useMemo<Market[]>(() => ALL_MARKETS, []);
   const [activeSymbol, setActiveSymbol] = useState<string>(
@@ -36,7 +32,7 @@ const TradingChart: React.FC = () => {
 
   const { isActive, collateralPerTap } = useTapToTrade();
   const { placeBet, isPending } = usePlaceBet();
-  const { usdcBalance } = useUSDCBalance();
+  const { currentBalance, pnlDollar, pnlPercent } = usePortfolioPnL();
 
   const { marketDataMap, oraclePrices } = useMarketWebSocket(baseMarkets);
 
@@ -81,6 +77,8 @@ const TradingChart: React.FC = () => {
     }
   }, [currentOraclePrice?.price, currentMarketData?.price, setCurrentPrice]);
 
+  const livePrice = parseFloat(currentPrice) || 0;
+
   const handleMarketSelect = (symbol: string) => {
     const selectedMarket = markets.find((m) => m.symbol === symbol);
     if (selectedMarket) {
@@ -88,14 +86,6 @@ const TradingChart: React.FC = () => {
       setActiveMarket(selectedMarket);
     }
   };
-
-  const headerDisplayPrice =
-    currentOraclePrice?.price ??
-    (currentMarketData?.price ? parseFloat(currentMarketData.price) : 0);
-  const headerPriceChange = currentMarketData?.priceChangePercent
-    ? parseFloat(currentMarketData.priceChangePercent)
-    : 0;
-  const isHeaderPositive = headerPriceChange >= 0;
 
   const handleCellClick = async (
     targetPrice: number,
@@ -175,43 +165,50 @@ const TradingChart: React.FC = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           <div className="flex gap-3 text-xs text-text-secondary pt-1">
-            <span>Balance</span>
-            <span className="font-semibold text-text-primary">${usdcBalance}</span>
+            <span className="font-semibold text-text-primary">
+              {livePrice > 0
+                ? `$${livePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : '—'}
+            </span>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="flex flex-col items-end gap-1">
             <span className="font-mono font-bold text-2xl text-text-primary">
-              {formatDynamicUsd(headerDisplayPrice)}
+              {currentBalance !== null
+                ? `$${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : '$0.00'}
             </span>
-            <span
-              className={`font-mono text-sm font-semibold ${
-                isHeaderPositive ? 'text-success' : 'text-error'
-              }`}
-            >
-              {isHeaderPositive ? '+' : ''}
-              {headerPriceChange.toFixed(2)}%
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`font-mono text-sm font-semibold ${
+                  (pnlPercent ?? 0) >= 0 ? 'text-success' : 'text-error'
+                }`}
+              >
+                {(pnlPercent ?? 0) >= 0 ? '+' : ''}
+                {pnlPercent !== null ? pnlPercent.toFixed(2) : '0.00'}%
+              </span>
+              <span
+                className={`font-mono text-sm font-semibold ${
+                  (pnlDollar ?? 0) >= 0 ? 'text-success' : 'text-error'
+                }`}
+              >
+                {(pnlDollar ?? 0) >= 0 ? '+' : ''}$
+                {pnlDollar !== null
+                  ? Math.abs(pnlDollar).toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  : '0.00'}
+              </span>
+            </div>
           </div>
           <WalletConnectButton />
-          <Image
-            src="/icons/base.png"
-            alt="Base"
-            width={28}
-            height={28}
-            className="rounded-full"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
         </div>
       </div>
 
-      <div
-        className="w-full flex-1"
-        style={{ minHeight: 0, position: 'relative' }}
-      >
+      <div className="w-full flex-1" style={{ minHeight: 0, position: 'relative' }}>
         {activeMarket && (
           <PerSecondChart
             key={`${activeMarket.symbol}-chart`}

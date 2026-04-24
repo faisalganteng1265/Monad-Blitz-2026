@@ -126,6 +126,7 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
     setIsFocusMode,
     hoveredCell,
     isPlacingBet,
+    isBinaryTradingEnabled,
     isInteractionLocked,
     resolveCellFromPoint: (point) => resolveCellFromPointRef.current?.(point) ?? null,
     onCellClick,
