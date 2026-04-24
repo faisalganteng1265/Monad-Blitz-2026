@@ -7,10 +7,10 @@ script = "script"
 cache_path = "cache"
 
 # Compiler settings
-solc_version = "0.8.31"
+solc_version = "0.8.24"
 optimizer = true
 optimizer_runs = 200
-via_ir = true
+# via_ir disabled — triggers a Yul optimizer stack bug in solc 0.8.24; not needed for TapX contracts
 
 # EVM version
 evm_version = "cancun"
@@ -18,7 +18,8 @@ evm_version = "cancun"
 # Remappings for imports
 remappings = [
     "@openzeppelin/=lib/openzeppelin-contracts/",
-    "forge-std/=lib/forge-std/src/"
+    "forge-std/=lib/forge-std/src/",
+    "@pythnetwork/pyth-sdk-solidity/=lib/pyth-sdk-solidity/"
 ]
 
 # Test settings
@@ -30,6 +31,7 @@ fs_permissions = [{ access = "read-write", path = "./deployments" }]
 
 # RPC endpoints
 [rpc_endpoints]
+monad_testnet = "https://testnet-rpc.monad.xyz"
 base_sepolia = "https://sepolia.base.org"
 base_mainnet = "https://mainnet.base.org"
 
