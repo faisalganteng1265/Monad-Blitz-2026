@@ -1,6 +1,5 @@
 'use client';
 
-import WalletConnectButton from '@/components/layout/WalletConnectButton';
 import PriceTicker from '@/components/layout/PriceTicker';
 import { useMarket } from '@/features/trading/contexts/MarketContext';
 import { useDynamicTitle } from '@/hooks/utils/useDynamicTitle';
@@ -21,16 +20,6 @@ export default function TradePageContent() {
 
   return (
     <main className="bg-trading-dark text-text-primary min-h-screen flex flex-col relative">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border-muted">
-        <a href="/" className="flex items-center gap-2 hover:opacity-80">
-          <span className="text-xl font-bold text-white">TapX</span>
-          <span className="text-xs text-text-secondary uppercase tracking-wider">
-            Tap to Profit
-          </span>
-        </a>
-        <WalletConnectButton />
-      </header>
-
       <div className="flex-1 flex flex-col min-h-0">
         {/* Price chart */}
         <div className="flex-1 min-h-[40vh]">

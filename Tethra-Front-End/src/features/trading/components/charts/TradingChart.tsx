@@ -14,6 +14,7 @@ import { formatDynamicUsd, formatMarketPair } from '@/features/trading/lib/marke
 import { useUSDCBalance } from '@/hooks/data/useUSDCBalance';
 import { usePlaceBet } from '@/features/trading/hooks/usePlaceBet';
 import { getMultiplier } from '@/features/trading/lib/multiplierEngine';
+import WalletConnectButton from '@/components/layout/WalletConnectButton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -179,18 +180,31 @@ const TradingChart: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-1">
-          <span className="font-mono font-bold text-2xl text-text-primary">
-            {formatDynamicUsd(headerDisplayPrice)}
-          </span>
-          <span
-            className={`font-mono text-sm font-semibold ${
-              isHeaderPositive ? 'text-success' : 'text-error'
-            }`}
-          >
-            {isHeaderPositive ? '+' : ''}
-            {headerPriceChange.toFixed(2)}%
-          </span>
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col items-end gap-1">
+            <span className="font-mono font-bold text-2xl text-text-primary">
+              {formatDynamicUsd(headerDisplayPrice)}
+            </span>
+            <span
+              className={`font-mono text-sm font-semibold ${
+                isHeaderPositive ? 'text-success' : 'text-error'
+              }`}
+            >
+              {isHeaderPositive ? '+' : ''}
+              {headerPriceChange.toFixed(2)}%
+            </span>
+          </div>
+          <WalletConnectButton />
+          <Image
+            src="/icons/base.png"
+            alt="Base"
+            width={28}
+            height={28}
+            className="rounded-full"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
         </div>
       </div>
 

@@ -210,7 +210,7 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
     if (bottomMargin > 0) ctx.fillRect(0, chartHeight, canvas.width, bottomMargin);
 
     // Calculate grid square size
-    const targetVerticalGrids = 10;
+    const targetVerticalGrids = 13;
     const gridSizePixels = chartHeight / targetVerticalGrids;
     const pixelsPerDollar = gridSizePixels / GRID_Y_DOLLARS;
     const priceRangeToShow = chartHeight / pixelsPerDollar;
@@ -542,26 +542,22 @@ const PerSecondChart: React.FC<PerSecondChartProps> = ({
 
           // Multiplier
           if (tradeMode !== 'open-position') {
-            ctx.font = 'bold 14px monospace';
+            ctx.font = 'bold 10px monospace';
             ctx.fillStyle = '#ffffff';
             ctx.shadowBlur = 4;
             ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-            // Note: backend sends multiplier as integer (e.g. 195 for 1.95x)?
-            // Check Bet interface: multiplier: number.
-            // In calculateMultiplier, it returns e.g. 195.
-            // So divide by 100 for display.
-            ctx.fillText(`${(displayMult / 100).toFixed(2)}x`, centerX, centerY - 8);
+            ctx.fillText(`${(displayMult / 100).toFixed(2)}x`, centerX, centerY - 6);
           }
 
           // Price
-          ctx.font = '600 12px monospace';
+          ctx.font = '600 9px monospace';
           ctx.fillStyle = '#ffffff';
           ctx.shadowBlur = 4;
           ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
           ctx.fillText(
             `$${displayPrice.toFixed(priceDecimals)}`,
             centerX,
-            tradeMode !== 'open-position' ? centerY + 8 : centerY,
+            tradeMode !== 'open-position' ? centerY + 6 : centerY,
           );
 
           ctx.shadowBlur = 0;
