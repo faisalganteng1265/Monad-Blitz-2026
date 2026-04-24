@@ -18,13 +18,16 @@ export default function TradePageContent() {
   const pairName = activeMarket?.symbol || 'BTC/USDT';
   useDynamicTitle(priceValue, pairName);
 
-  const handleBetWon = useCallback((event: BetWonEvent) => {
-    if (!address) return;
-    if (event.trader.toLowerCase() !== address.toLowerCase()) return;
-    const payout = Number(BigInt(event.payout)) / 1e6; // USDC 6 decimals
-    setWinPopup({ payout });
-    setTimeout(() => setWinPopup(null), 3000);
-  }, [address]);
+  const handleBetWon = useCallback(
+    (event: BetWonEvent) => {
+      if (!address) return;
+      if (event.trader.toLowerCase() !== address.toLowerCase()) return;
+      const payout = Number(BigInt(event.payout)) / 1e6; // USDC 6 decimals
+      setWinPopup({ payout });
+      setTimeout(() => setWinPopup(null), 3000);
+    },
+    [address],
+  );
 
   const baseMarkets = activeMarket ? [activeMarket] : [];
   useMarketWebSocket(baseMarkets, handleBetWon);
@@ -33,10 +36,10 @@ export default function TradePageContent() {
     <main className="bg-trading-dark text-text-primary h-screen flex flex-col overflow-hidden">
       {/* Win popup */}
       {winPopup && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
+        <div className="fixed left-1/7 top-1/3 z-[9999] flex items-start justify-center pointer-events-none transition ease-in-out delay-75">
           <div
-            className="bg-green-500/90 border border-green-400 rounded-2xl px-10 py-6 text-center shadow-2xl"
-            style={{ animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}
+            className="bg-green-500 border border-green-400 rounded-2xl px-10 py-6 text-center shadow-2xl"
+            style={{ animation: 'popIn 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards' }}
           >
             <div className="text-white/80 text-sm font-medium mb-1">YOU WON!</div>
             <div className="text-white text-4xl font-bold">+${winPopup.payout.toFixed(2)}</div>
